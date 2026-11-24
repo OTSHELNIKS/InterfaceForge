@@ -7,6 +7,9 @@ class AppColors {
   /// Светлая бумага васи.
   static const Color paper = Color(0xFFF7F1E8);
 
+  /// Точный фон выбранного сгенерированного макета (край PNG).
+  static const Color designPaper = Color(0xFFF2EDE3);
+
   /// Цвет карточек — чуть теплее и светлее бумаги.
   static const Color card = Color(0xFFFFFCF8);
 

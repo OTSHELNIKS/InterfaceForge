@@ -56,28 +56,38 @@ class AppShell extends StatelessWidget {
     final width = MediaQuery.sizeOf(context).width;
     final rail = width >= 900;
     final dark = Theme.of(context).brightness == Brightness.dark;
+    // Главная — пиксельно точный макет 1:1: ни рейла, ни нижней навигации,
+    // ни дополнительного PaperBackground поверх выбранного PNG.
+    final exactHome = navigationShell.currentIndex == 0;
+    final uiDark = dark && !exactHome;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
-        statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+        statusBarIconBrightness: uiDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: uiDark ? Brightness.dark : Brightness.light,
         systemNavigationBarColor: Colors.transparent,
-        systemNavigationBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+        systemNavigationBarIconBrightness: uiDark ? Brightness.light : Brightness.dark,
         systemNavigationBarContrastEnforced: false,
       ),
       child: Scaffold(
-        extendBody: !rail,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: PaperBackground(
-          child: Row(
-            children: [
-              if (rail) HikariRail(shell: navigationShell, extended: width >= 1180),
-              Expanded(child: navigationShell),
-            ],
-          ),
-        ),
-        bottomNavigationBar: rail ? null : HikariBottomNav(shell: navigationShell),
+        extendBody: !rail && !exactHome,
+        backgroundColor: exactHome
+            ? AppColors.designPaper
+            : Theme.of(context).scaffoldBackgroundColor,
+        body: exactHome
+            ? navigationShell
+            : PaperBackground(
+                child: Row(
+                  children: [
+                    if (rail) HikariRail(shell: navigationShell, extended: width >= 1180),
+                    Expanded(child: navigationShell),
+                  ],
+                ),
+              ),
+        bottomNavigationBar: rail || exactHome
+            ? null
+            : HikariBottomNav(shell: navigationShell),
       ),
     );
   }

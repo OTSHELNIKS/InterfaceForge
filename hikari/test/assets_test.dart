@@ -16,4 +16,8 @@ void main() {
       }
     }
   });
+
+  test('пиксельный макет главной доступен в бандле', () async {
+    await rootBundle.load('assets/design/hikari-light-concept.png');
+  });
 }
