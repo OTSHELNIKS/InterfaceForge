@@ -15,7 +15,7 @@ Workflow [`.github/workflows/deploy-hikari-web.yml`](.github/workflows/deploy-hi
 
 **Опубликовано:** https://otshelniks.github.io/InterfaceForge/ — страница отдаёт
 `Hikari · 光`, а `go_router` переводит на `#/home`. Последний успешный деплой:
-[run 45485582373](https://github.com/OTSHELNIKS/InterfaceForge/actions/runs/45485582373).
+[run 45486530211](https://github.com/OTSHELNIKS/InterfaceForge/actions/runs/45486530211).
 
 Pages в этом репозитории уже включён (**Source: GitHub Actions**). При переносе
 workflow в новый репозиторий этот шаг нужно сделать один раз вручную: эндпоинт
