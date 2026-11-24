@@ -431,3 +431,6 @@ FodyWeavers.xsd
 # Live preview dependencies and build output
 node_modules/
 dev-preview/dist/
+
+# Compiled Flutter web build downloaded from the CI artifact
+/flutter-web/

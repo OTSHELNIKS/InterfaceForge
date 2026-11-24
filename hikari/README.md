@@ -46,9 +46,19 @@ npm run dev
 Настоящая веб-версия собирается в CI — у раннера GitHub Actions есть Flutter SDK
 и доступ к pub.dev. Workflow
 [`../.github/workflows/deploy-hikari-web.yml`](../.github/workflows/deploy-hikari-web.yml)
-запускает `analyze`, юнит-тесты, `flutter build web` и деплоит на Pages:
-
+запускает `analyze`, юнит-тесты, `flutter build web`, всегда сохраняет результат
+артефактом `hikari-web` и деплоит на Pages:
 **https://otshelniks.github.io/InterfaceForge/**
+
+Pages нужно один раз включить в
+[Settings → Pages](https://github.com/OTSHELNIKS/InterfaceForge/settings/pages)
+(Source: GitHub Actions): токен интеграции Arena не имеет прав на создание
+Pages-сайта через API. Артефакт при этом доступен всегда:
+
+```sh
+gh run download <run-id> -n hikari-web -D ../flutter-web
+node ../dev-preview/serve-flutter-web.cjs ../flutter-web
+```
 
 Локально то же самое:
 

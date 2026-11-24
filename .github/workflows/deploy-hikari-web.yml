@@ -23,6 +23,8 @@ jobs:
   build:
     name: Build Flutter web
     runs-on: ubuntu-latest
+    outputs:
+      pages_ready: ${{ steps.pages.outcome }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,12 +55,25 @@ jobs:
         working-directory: hikari
         run: flutter build web --release --base-href /InterfaceForge/
 
+      # Всегда сохраняем результат сборки: его можно скачать и запустить локально,
+      # даже если у токена нет прав на создание GitHub Pages-сайта.
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hikari-web
+          path: hikari/build/web
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Configure GitHub Pages
+        id: pages
+        continue-on-error: true
         uses: actions/configure-pages@v5
         with:
           enablement: true
 
       - name: Upload Pages artifact
+        if: steps.pages.outcome == 'success'
         uses: actions/upload-pages-artifact@v3
         with:
           path: hikari/build/web
@@ -66,6 +81,7 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     needs: build
+    if: needs.build.outputs.pages_ready == 'success'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
