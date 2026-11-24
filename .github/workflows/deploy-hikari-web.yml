@@ -1,0 +1,76 @@
+name: Deploy Hikari (Flutter Web)
+
+on:
+  push:
+    branches:
+      - main
+      - arena/45285b5c-interfaceforge
+    paths:
+      - 'hikari/**'
+      - '.github/workflows/deploy-hikari-web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Flutter web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter 3.50.1
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.50.1
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        working-directory: hikari
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: hikari
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Unit tests
+        working-directory: hikari
+        run: flutter test test/catalog_test.dart test/providers_test.dart test/assets_test.dart
+
+      - name: Build web release
+        working-directory: hikari
+        run: flutter build web --release --base-href /InterfaceForge/
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: hikari/build/web
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

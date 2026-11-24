@@ -1,10 +1,17 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+
 import 'package:hikari/data/models/device_info.dart';
-import 'package:path_provider/path_provider.dart';
+
+import 'staged_asset.dart';
+import 'system_service_staging.dart'
+    if (dart.library.io) 'system_service_staging_io.dart';
 
 /// Мост к нативному слою: установка системных обоев и темы.
+///
+/// На вебе системный канал `hikari/system` отсутствует, поэтому методы
+/// возвращают безопасные заглушки: тема применяется внутри приложения,
+/// а попытка установить обои даёт понятное сообщение.
 class SystemService {
   const SystemService();
 
@@ -12,23 +19,23 @@ class SystemService {
 
   /// Информация об устройстве: платформа, версия ОС, модель.
   Future<DeviceInfo> deviceInfo() async {
+    if (kIsWeb) return DeviceInfo.fallback;
     final raw = await channel.invokeMethod<Map<Object?, Object?>>('getDeviceInfo');
     if (raw == null) return DeviceInfo.fallback;
     return DeviceInfo.fromMap(raw);
   }
 
-  /// Копирует ассет в кеш и возвращает путь к файлу для нативного слоя.
-  Future<File> stageAsset(String assetPath, {String? fileName}) async {
-    final data = await rootBundle.load(assetPath);
-    final directory = await getTemporaryDirectory();
-    final name = fileName ?? assetPath.split('/').last;
-    final file = File('${directory.path}${Platform.pathSeparator}hikari_$name');
-    await file.writeAsBytes(data.buffer.asUint8List(), flush: true);
-    return file;
-  }
+  /// Готовит ассет к передаче в нативный слой.
+  Future<StagedAsset> stageAsset(String assetPath, {String? fileName}) =>
+      stageAssetPlatform(assetPath, fileName: fileName);
 
   /// Устанавливает системные обои (рабочий стол + экран блокировки на Android).
   Future<bool> applyWallpaper(String filePath) async {
+    if (kIsWeb) {
+      throw MissingPluginException(
+        'Установка системных обоев недоступна в веб-версии',
+      );
+    }
     final result = await channel.invokeMethod<bool>('applyWallpaper', filePath);
     return result ?? false;
   }
@@ -40,6 +47,7 @@ class SystemService {
     required String accent,
     required String themeId,
   }) async {
+    if (kIsWeb) return const {};
     final result = await channel.invokeMethod<Map<Object?, Object?>>('applyTheme', {
       'dark': dark,
       'accent': accent,
@@ -50,6 +58,7 @@ class SystemService {
 
   /// Сбрасывает системную тему к значению по умолчанию (Windows).
   Future<bool> resetSystemTheme() async {
+    if (kIsWeb) return false;
     final result = await channel.invokeMethod<bool>('resetSystemTheme');
     return result ?? false;
   }

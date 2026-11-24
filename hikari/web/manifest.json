@@ -1,12 +1,12 @@
 {
-    "name": "hikari",
-    "short_name": "hikari",
+    "name": "Hikari · 光",
+    "short_name": "Hikari",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
+    "background_color": "#F7F1E8",
+    "theme_color": "#C9362B",
     "description": "Hikari — японские темы и обои для устройства",
-    "orientation": "portrait-primary",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

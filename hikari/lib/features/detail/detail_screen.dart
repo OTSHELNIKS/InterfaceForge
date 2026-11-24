@@ -48,8 +48,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
           SnackBar(content: Text('Тема «${item.title}» применена')),
         );
       } else {
-        final file = await service.stageAsset(item.assetLandscape);
-        final ok = await service.applyWallpaper(file.path);
+        final staged = await service.stageAsset(item.assetLandscape);
+        final ok = await service.applyWallpaper(staged.path);
         if (!mounted) return;
         setState(() => _applied = ok);
         messenger.showSnackBar(
