@@ -16,12 +16,15 @@ Workflow [`.github/workflows/deploy-hikari-web.yml`](.github/workflows/deploy-hi
 
 **Адрес после включения Pages:** https://otshelniks.github.io/InterfaceForge/
 
-> Токен интеграции Arena не может создать Pages-сайт через API
-> (`Resource not accessible by integration`). Один раз зайдите в
+> Создать Pages-сайт из workflow или токеном интеграции нельзя: REST-эндпоинт
+> `POST /repos/{owner}/{repo}/pages` требует `Administration: write`, которого
+> нет у `GITHUB_TOKEN` ни при каких `permissions` ([документация GitHub](https://docs.github.com/en/rest/pages/pages#create-a-github-pages-site)).
+> Один раз зайдите в
 > [Settings → Pages](https://github.com/OTSHELNIKS/InterfaceForge/settings/pages)
-> и выберите **Source: GitHub Actions** — следующий пуш (или **Run workflow**)
-> задеплоит автоматически. Пока этого не сделано, сборка всё равно зелёная и
-> артефакт доступен.
+> и выберите **Source: GitHub Actions** ([инструкция](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site#publishing-with-a-custom-github-actions-workflow)) —
+> следующий пуш (или **Run workflow**) задеплоит автоматически. Пока этого не
+> сделано, CI проверяет наличие Pages, пропускает деплой с понятной подсказкой
+> в step summary, но сборка остаётся зелёной и артефакт доступен.
 
 Скачать и посмотреть сборку локально:
 

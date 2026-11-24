@@ -52,8 +52,10 @@ npm run dev
 
 Pages нужно один раз включить в
 [Settings → Pages](https://github.com/OTSHELNIKS/InterfaceForge/settings/pages)
-(Source: GitHub Actions): токен интеграции Arena не имеет прав на создание
-Pages-сайта через API. Артефакт при этом доступен всегда:
+(Source: GitHub Actions): создание Pages-сайта через API требует
+`Administration: write`, которого нет у `GITHUB_TOKEN`, поэтому workflow
+проверяет сайт, пропускает деплой с подсказкой и остаётся зелёным. Артефакт
+при этом доступен всегда:
 
 ```sh
 gh run download <run-id> -n hikari-web -D ../flutter-web

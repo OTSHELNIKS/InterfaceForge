@@ -23,6 +23,8 @@ jobs:
   build:
     name: Build Flutter web
     runs-on: ubuntu-latest
+    outputs:
+      pages_ready: ${{ steps.pages_check.outputs.enabled }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,7 +55,7 @@ jobs:
         working-directory: hikari
         run: flutter build web --release --base-href /InterfaceForge/
 
-      # Артефакт доступен всегда, даже если деплой на Pages ещё недоступен.
+      # Артефакт доступен всегда, даже пока Pages не включён в настройках репозитория.
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -62,7 +64,38 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      # Создать Pages-сайт из workflow нельзя: POST /pages требует
+      # "Administration: write", а GITHUB_TOKEN такого разрешения не получает.
+      # Поэтому проверяем сайт и, если его нет, честно пропускаем деплой.
+      - name: Check GitHub Pages availability
+        id: pages_check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/$GITHUB_REPOSITORY/pages" > /dev/null 2>&1; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+            echo 'GitHub Pages is enabled; deployment will run.'
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+            echo '::notice::GitHub Pages is not enabled; deployment is skipped. Open Settings -> Pages and choose Source: GitHub Actions once, then rerun this workflow.'
+            {
+              echo '### GitHub Pages пока не включён'
+              echo
+              echo 'Администратору репозитория нужно один раз зайти в'
+              echo '**Settings → Pages → Build and deployment → Source: GitHub Actions**'
+              echo 'и сохранить настройку. После этого следующий пуш или **Run workflow**'
+              echo 'автоматически задеплоит собранное приложение.'
+              echo
+              echo 'Сборка при этом уже готова и лежит в артефакте `hikari-web`.'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Configure GitHub Pages
+        if: steps.pages_check.outputs.enabled == 'true'
+        uses: actions/configure-pages@v5
+
       - name: Upload Pages artifact
+        if: steps.pages_check.outputs.enabled == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: hikari/build/web
@@ -70,12 +103,11 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     needs: build
-    if: always() && needs.build.result == 'success'
+    if: needs.build.outputs.pages_ready == 'true'
     runs-on: ubuntu-latest
-    continue-on-error: true
     environment:
       name: github-pages
-      url: https://otshelniks.github.io/InterfaceForge/
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy
         id: deployment
