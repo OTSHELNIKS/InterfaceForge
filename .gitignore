@@ -427,3 +427,7 @@ FodyWeavers.xsd
 
 # Scratch downloads from Google Drive (source archives are not stored in Git)
 /google_drive/
+
+# Live preview dependencies and build output
+node_modules/
+dev-preview/dist/

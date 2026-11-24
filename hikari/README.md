@@ -14,9 +14,10 @@ Flutter MVP для Windows и Android: локальный каталог тем 
 Нужен Flutter 3.50.1 (Dart 3.14), инструменты соответствующей платформы и доступ к pub.dev.
 
 ```sh
+python3 tools/check_assets.py   # пути к ассетам из catalog.json существуют
 flutter pub get
 flutter analyze
-flutter test test/catalog_test.dart test/providers_test.dart
+flutter test test/catalog_test.dart test/providers_test.dart test/assets_test.dart
 flutter run -d windows   # на Windows с Visual Studio и workload Desktop development with C++
 flutter run -d android   # с Android SDK и совместимой версией JDK
 flutter build windows
@@ -24,6 +25,21 @@ flutter build apk --release
 ```
 
 При выпуске Android APK настройте собственный ключ подписи. Проверяйте работу на реальном устройстве и на целевой версии Windows: нативные интеграции в текущем окружении не собирались и не проверялись на устройствах.
+
+## Live-превью в браузере
+
+В репозитории есть [`../dev-preview/`](../dev-preview/) — веб-визуализация на реальных
+`assets/catalog/catalog.json`, обоях и шрифтах. Она поднимается через Vite и сама
+обновляется при правке файлов; внутри есть редактор каталога и CSS.
+
+```sh
+cd ../dev-preview
+npm install
+npm run dev
+```
+
+Это не скомпилированное Flutter-приложение (в песочнице Arena нет Flutter SDK и
+доступа к pub.dev), а способ дорабатывать интерфейс и сразу видеть изменения.
 
 ## Ограничения платформ
 

@@ -42,8 +42,8 @@
       "date": "2026-11-18",
       "popularity": 96,
       "description": "Небо в минуту, когда солнце опускается за горизонт: киноварный диск, медленные полосы облаков и тёплое золото у земли.",
-      "asset": "assets/wallpapers/akane_no_sora_p.jpg",
-      "assetLandscape": "assets/wallpapers/akane_no_sora_l.jpg"
+      "asset": "assets/wallpapers/akane-no-sora_p.jpg",
+      "assetLandscape": "assets/wallpapers/akane-no-sora_l.jpg"
     },
     {
       "id": "vermilion-dusk",
@@ -56,8 +56,8 @@
       "date": "2026-11-12",
       "popularity": 88,
       "description": "Тема для тёплых вечеров: глубокий суми, пылающая киноварь и мягкий свет сакуры на бумаге.",
-      "asset": "assets/wallpapers/vermilion_dusk_p.jpg",
-      "assetLandscape": "assets/wallpapers/vermilion_dusk_l.jpg"
+      "asset": "assets/wallpapers/vermilion-dusk_p.jpg",
+      "assetLandscape": "assets/wallpapers/vermilion-dusk_l.jpg"
     },
     {
       "id": "kintoki",
@@ -112,8 +112,8 @@
       "date": "2026-09-28",
       "popularity": 90,
       "description": "Самый известный сорт сакуры. Светлая, почти белая бумага с розовыми мазками и тёплым золотом.",
-      "asset": "assets/wallpapers/somei_yoshino_p.jpg",
-      "assetLandscape": "assets/wallpapers/somei_yoshino_l.jpg"
+      "asset": "assets/wallpapers/somei-yoshino_p.jpg",
+      "assetLandscape": "assets/wallpapers/somei-yoshino_l.jpg"
     },
     {
       "id": "hanafubuki",
@@ -140,8 +140,8 @@
       "date": "2026-09-14",
       "popularity": 79,
       "description": "Песня сакуры в пяти цветах: нежный розовый, тёплый красный и немного золота.",
-      "asset": "assets/wallpapers/sakura_no_uta_p.jpg",
-      "assetLandscape": "assets/wallpapers/sakura_no_uta_l.jpg"
+      "asset": "assets/wallpapers/sakura-no-uta_p.jpg",
+      "assetLandscape": "assets/wallpapers/sakura-no-uta_l.jpg"
     },
     {
       "id": "sumi-no-mai",
@@ -154,8 +154,8 @@
       "date": "2026-10-08",
       "popularity": 87,
       "description": "Танец туши: энсо, нарисованный одним движением, на зернистой бумаге васи.",
-      "asset": "assets/wallpapers/sumi_no_mai_p.jpg",
-      "assetLandscape": "assets/wallpapers/sumi_no_mai_l.jpg"
+      "asset": "assets/wallpapers/sumi-no-mai_p.jpg",
+      "assetLandscape": "assets/wallpapers/sumi-no-mai_l.jpg"
     },
     {
       "id": "kurogane",
@@ -182,8 +182,8 @@
       "date": "2026-09-20",
       "popularity": 85,
       "description": "Строгий чёрный и щедрое золото. Тема для тех, кто любит контраст и не боится темноты.",
-      "asset": "assets/wallpapers/ink_and_gold_p.jpg",
-      "assetLandscape": "assets/wallpapers/ink_and_gold_l.jpg"
+      "asset": "assets/wallpapers/ink-and-gold_p.jpg",
+      "assetLandscape": "assets/wallpapers/ink-and-gold_l.jpg"
     },
     {
       "id": "kannon",
@@ -210,8 +210,8 @@
       "date": "2026-10-26",
       "popularity": 83,
       "description": "Река индиго: глубокий синий, холодная пена и отражение заката на поверхности воды.",
-      "asset": "assets/wallpapers/ai_no_kawa_p.jpg",
-      "assetLandscape": "assets/wallpapers/ai_no_kawa_l.jpg"
+      "asset": "assets/wallpapers/ai-no-kawa_p.jpg",
+      "assetLandscape": "assets/wallpapers/ai-no-kawa_l.jpg"
     },
     {
       "id": "ruri",
