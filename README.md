@@ -10,21 +10,24 @@ A cross-platform app for customizing the interface of phones and PCs.
 
 Workflow [`.github/workflows/deploy-hikari-web.yml`](.github/workflows/deploy-hikari-web.yml)
 на каждом пуше в `main` или в текущую ветку запускает `analyze`, юнит-тесты и
-`flutter build web --release --base-href /InterfaceForge/`, после чего всегда
-выкладывает результат артефактом `hikari-web` и — если Pages включён — деплоит
-его через `actions/deploy-pages`.
+`flutter build web --release --base-href /InterfaceForge/`, всегда выкладывает
+результат артефактом `hikari-web` и деплоит его через `actions/deploy-pages`.
 
-**Адрес после включения Pages:** https://otshelniks.github.io/InterfaceForge/
+**Опубликовано:** https://otshelniks.github.io/InterfaceForge/ — страница отдаёт
+`Hikari · 光`, а `go_router` переводит на `#/home`. Последний успешный деплой:
+[run 45485582373](https://github.com/OTSHELNIKS/InterfaceForge/actions/runs/45485582373).
 
-> Создать Pages-сайт из workflow или токеном интеграции нельзя: REST-эндпоинт
-> `POST /repos/{owner}/{repo}/pages` требует `Administration: write`, которого
-> нет у `GITHUB_TOKEN` ни при каких `permissions` ([документация GitHub](https://docs.github.com/en/rest/pages/pages#create-a-github-pages-site)).
-> Один раз зайдите в
-> [Settings → Pages](https://github.com/OTSHELNIKS/InterfaceForge/settings/pages)
-> и выберите **Source: GitHub Actions** ([инструкция](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site#publishing-with-a-custom-github-actions-workflow)) —
-> следующий пуш (или **Run workflow**) задеплоит автоматически. Пока этого не
-> сделано, CI проверяет наличие Pages, пропускает деплой с понятной подсказкой
-> в step summary, но сборка остаётся зелёной и артефакт доступен.
+Pages в этом репозитории уже включён (**Source: GitHub Actions**). При переносе
+workflow в новый репозиторий этот шаг нужно сделать один раз вручную: эндпоинт
+`POST /repos/{owner}/{repo}/pages` требует `Administration: write`, которого нет
+у `GITHUB_TOKEN` ([документация GitHub](https://docs.github.com/en/rest/pages/pages#create-a-github-pages-site)).
+Пока Pages выключен, CI честно пропускает только деплой с подсказкой в step
+summary — сборка и артефакт остаются доступны.
+
+Деплой идёт в окружение `hikari-pages`, а не в автоматический `github-pages`:
+у последнего по умолчанию branch policy разрешает только `main`, а здесь нужно
+публиковать и рабочую ветку. Поэтому пуши в `main` и в
+`arena/45285b5c-interfaceforge` деплоятся одинаково.
 
 Скачать и посмотреть сборку локально:
 

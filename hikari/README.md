@@ -50,12 +50,12 @@ npm run dev
 артефактом `hikari-web` и деплоит на Pages:
 **https://otshelniks.github.io/InterfaceForge/**
 
-Pages нужно один раз включить в
+Pages уже включён в
 [Settings → Pages](https://github.com/OTSHELNIKS/InterfaceForge/settings/pages)
-(Source: GitHub Actions): создание Pages-сайта через API требует
-`Administration: write`, которого нет у `GITHUB_TOKEN`, поэтому workflow
-проверяет сайт, пропускает деплой с подсказкой и остаётся зелёным. Артефакт
-при этом доступен всегда:
+(Source: GitHub Actions); деплой идёт в окружение `hikari-pages`, чтобы рабочая
+ветка не упиралась в branch policy автоматического окружения `github-pages`
+(там по умолчанию разрешён только `main`). Если Pages выключить, CI пропустит
+только деплой с подсказкой и останется зелёным. Артефакт доступен всегда:
 
 ```sh
 gh run download <run-id> -n hikari-web -D ../flutter-web
