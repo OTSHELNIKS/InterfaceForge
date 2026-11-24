@@ -424,3 +424,6 @@ FodyWeavers.xsd
 
 # Official VS Code C# Dev Kit Extension exclusion
 #*.lscache
+
+# Scratch downloads from Google Drive (source archives are not stored in Git)
+/google_drive/
