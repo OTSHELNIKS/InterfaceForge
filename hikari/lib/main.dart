@@ -20,6 +20,11 @@ Future<void> main() async {
   );
 
   final prefs = await SharedPreferences.getInstance();
+  // Миграция: раньше по умолчанию был «системный» режим, из-за которого
+  // тёмная ОС внезапно делала интерфейс почти чёрным. Теперь база — светлая.
+  if (prefs.getString('hikari.themeMode') == 'system') {
+    await prefs.setString('hikari.themeMode', 'light');
+  }
 
   runApp(
     ProviderScope(

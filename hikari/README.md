@@ -70,6 +70,10 @@ flutter build web --release --base-href /InterfaceForge/
 # результат: build/web/
 ```
 
+Интерфейс стартует в светлой теме «васи»: тёмная ОС больше не делает его
+почти чёрным, а тёмную тему можно включить осознанно в настройках. Hero и
+карточки коллекций берут сгенерированные изображения из `assets/wallpapers/`.
+
 Для веба `SystemService` использует условный импорт вместо `dart:io`:
 `lib/core/services/system_service_staging_io.dart` (Windows/Android) и
 `system_service_staging.dart` (web). Канал `hikari/system` на вебе отсутствует,
@@ -85,4 +89,4 @@ flutter build web --release --base-href /InterfaceForge/
 
 ## Ресурсы
 
-Шрифты Inter, Playfair Display, Caveat Brush, Yuji Syuku и Shippori Mincho распространяются по SIL Open Font License; тексты лицензий находятся в `assets/fonts/licenses/`. Изображения и текстуры генерируются локальными скриптами в `tools/`.
+Шрифты Inter, Playfair Display, Caveat Brush, Yuji Syuku и Shippori Mincho распространяются по SIL Open Font License; тексты лицензий находятся в `assets/fonts/licenses/`. Hero и обложки коллекций в `assets/wallpapers/generated-*.jpg` сгенерированы ИИ по выбранному светлому макету [`../design/hikari-light-concept.png`](../design/hikari-light-concept.png); скрипт `tools/gen_assets.py` оставлен как легаси-генератор процедурной графики MVP и не должен перезаписывать новые изображения.

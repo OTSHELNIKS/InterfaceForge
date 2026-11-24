@@ -5,14 +5,14 @@ import 'package:hikari/core/widgets/grain_overlay.dart';
 import 'package:hikari/core/widgets/hikari_logo.dart';
 import 'package:hikari/core/widgets/sakura_branch.dart';
 
-/// Тёмный постерный хедер: красное солнце, ветвь сакуры, водяной 光
-/// и плавный переход в бумажную область.
+/// Светлый сгенерированный хедер: пейзаж с тории, мягкий градиент
+/// для читаемого текста и плавный переход в бумажную область.
 class HeroHeader extends StatelessWidget {
   const HeroHeader({
     super.key,
     required this.onOpenCatalog,
     this.onOpenWallpaper,
-    this.heroTitle = 'Свет,',
+    this.heroTitle = 'Красота',
   });
 
   final VoidCallback onOpenCatalog;
@@ -43,7 +43,7 @@ class HeroHeader extends StatelessWidget {
               Positioned.fill(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(56, 40, 340, 40),
-                  child: _content(context, wide: true, paper: paper),
+                  child: _content(context, wide: true),
                 ),
               ),
               Positioned(
@@ -94,7 +94,7 @@ class HeroHeader extends StatelessWidget {
               bottom: false,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(24, 8, 24, 26),
-                child: _content(context, wide: false, paper: paper),
+                child: _content(context, wide: false),
               ),
             ),
           ),
@@ -125,92 +125,66 @@ class HeroHeader extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
+        // Сгенерированное изображение вместо процедурно нарисованного постера.
+        Image.asset(
+          'assets/wallpapers/generated-hero.jpg',
+          fit: BoxFit.cover,
+          filterQuality: FilterQuality.high,
+          errorBuilder: (context, error, stack) => DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: const [Color(0xFF241713), Color(0xFF100C0A)],
+              ),
+            ),
+          ),
+        ),
+        // Мягкий градиент только слева: белый заголовок читается,
+        // а само изображение остаётся светлым и детализированным.
         DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: const [
-                Color(0xFF100C0A),
-                Color(0xFF241713),
-                Color(0xFF1B1210),
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                const Color(0xFF1E1917).withValues(alpha: 0.82),
+                const Color(0xFF1E1917).withValues(alpha: 0.48),
+                const Color(0xFF1E1917).withValues(alpha: 0.05),
               ],
-              stops: const [0.0, 0.58, 1.0],
+              stops: const [0.0, 0.48, 1.0],
             ),
           ),
         ),
-        // Тёплое свечение над солнцем.
         DecoratedBox(
           decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: const Alignment(0.82, -0.18),
-              radius: 0.95,
-              colors: [
-                AppColors.vermilion.withValues(alpha: 0.30),
-                AppColors.vermilion.withValues(alpha: 0.08),
-                Colors.transparent,
-              ],
-              stops: const [0.0, 0.42, 1.0],
-            ),
-          ),
-        ),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final wide = constraints.maxWidth >= 880;
-            return Stack(
-              children: [
-                Positioned(
-                  top: wide ? -118 : -84,
-                  right: wide ? -46 : -52,
-                  child: SunDisc(size: wide ? 356 : 224),
-                ),
-                Positioned(
-                  right: wide ? 10 : -26,
-                  bottom: wide ? -120 : -96,
-                  child: KanjiMark(
-                    size: wide ? 430 : 270,
-                    color: paper,
-                    opacity: 0.045,
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  height: wide ? 330 : 236,
-                  child: SakuraBranch(
-                    ink: paper.withValues(alpha: 0.78),
-                    blossom: AppColors.sakura,
-                    density: wide ? 1.25 : 0.85,
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-        const Positioned.fill(child: GrainOverlay(opacity: 0.14)),
-        // Виньетка по краям.
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment.center,
-              radius: 1.15,
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
               colors: [
                 Colors.transparent,
-                Colors.black.withValues(alpha: 0.30),
+                const Color(0xFF1E1917).withValues(alpha: 0.28),
               ],
               stops: const [0.55, 1.0],
             ),
+          ),
+        ),
+        Positioned.fill(
+          child: IgnorePointer(
+            child: GrainOverlay(opacity: 0.06),
           ),
         ),
       ],
     );
   }
 
-  Widget _content(BuildContext context, {required bool wide, required Color paper}) {
+  Widget _content(BuildContext context, {required bool wide}) {
+    // Поверх сгенерированного пейзажа текст всегда светлый, даже если
+    // пользователь выбрал тёмную тему для остального интерфейса.
+    const foreground = AppColors.card;
     final titleStyle = AppText.display(
       wide ? 66 : 42,
-      color: paper,
+      color: foreground,
       height: 1.0,
       letterSpacing: -0.025,
     );
@@ -220,20 +194,20 @@ class HeroHeader extends StatelessWidget {
       children: [
         Row(
           children: [
-            HikariLogo(size: wide ? 30 : 26, color: paper),
+            HikariLogo(size: wide ? 30 : 26, color: foreground),
             const Spacer(),
             if (wide)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: paper.withValues(alpha: 0.16)),
+                  border: Border.all(color: foreground.withValues(alpha: 0.22)),
                 ),
                 child: Text(
                   'v1.0 · 光',
                   style: AppText.label(
                     10,
-                    color: paper.withValues(alpha: 0.55),
+                    color: foreground.withValues(alpha: 0.72),
                     letterSpacing: 0.22,
                   ),
                 ),
@@ -247,24 +221,24 @@ class HeroHeader extends StatelessWidget {
             const SizedBox(width: 12),
             Text(
               'ЯПОНСКАЯ ЭСТЕТИКА · 2026',
-              style: AppText.eyebrow(AppColors.gold.withValues(alpha: 0.92)),
+              style: AppText.eyebrow(AppColors.gold.withValues(alpha: 0.95)),
             ),
           ],
         ),
         const SizedBox(height: 18),
         Text(
-          wide ? 'Свет,\nкоторый остаётся' : 'Свет,\nкоторый\nостаётся',
+          wide ? '$heroTitle\nв простых вещах' : '$heroTitle\nв простых\nвещах',
           style: titleStyle,
         ),
         const SizedBox(height: 18),
         ConstrainedBox(
           constraints: BoxConstraints(maxWidth: wide ? 420 : 320),
           child: Text(
-            'Темы и обои в духе суми-э: киноварь, сакура и бумага васи. '
-            'Каждый экран — маленькая галерея.',
+            'Японские обои и темы, которые наполняют ваш день '
+            'атмосферой гармонии. Каждый экран — маленькая галерея.',
             style: AppText.body(
               wide ? 15.5 : 14,
-              color: paper.withValues(alpha: 0.68),
+              color: foreground.withValues(alpha: 0.88),
               height: 1.55,
             ),
           ),
@@ -275,7 +249,7 @@ class HeroHeader extends StatelessWidget {
             FilledButton.icon(
               onPressed: onOpenCatalog,
               icon: const Icon(Icons.auto_awesome_rounded, size: 17),
-              label: const Text('Смотреть каталог'),
+              label: const Text('Открыть коллекции'),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.vermilion,
                 foregroundColor: AppColors.card,
@@ -287,7 +261,7 @@ class HeroHeader extends StatelessWidget {
               icon: const Icon(Icons.image_outlined, size: 17),
               label: const Text('Обои дня'),
               style: TextButton.styleFrom(
-                foregroundColor: paper.withValues(alpha: 0.8),
+                foregroundColor: foreground.withValues(alpha: 0.9),
               ),
             ),
           ],

@@ -56,9 +56,9 @@ class WallpaperOfDayCard extends StatelessWidget {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                Colors.black.withValues(alpha: 0.05),
-                                Colors.black.withValues(alpha: 0.30),
-                                Colors.black.withValues(alpha: 0.72),
+                                Colors.black.withValues(alpha: 0.02),
+                                Colors.black.withValues(alpha: 0.22),
+                                Colors.black.withValues(alpha: 0.58),
                               ],
                               stops: const [0.0, 0.45, 1.0],
                             ),

@@ -5,6 +5,16 @@ A cross-platform app for customizing the interface of phones and PCs.
 
 - [`hikari/`](hikari/) — Flutter MVP для Windows и Android: локальный каталог японских тем и обоев. Исходники импортированы из Google Drive (`Hikari/hikari-source.zip`). Описание, запуск и сборка — в [hikari/README.md](hikari/README.md).
 - [`dev-preview/`](dev-preview/) — браузерное live-превью Hikari на реальных данных, обоях и шрифтах из `hikari/assets`. Нужно для быстрой доработки интерфейса без Flutter SDK.
+- [`design/hikari-light-concept.png`](design/hikari-light-concept.png) — выбранный сгенерированный светлый макет интерфейса, по которому переделан дизайн.
+
+## Сгенерированный дизайн
+
+После замечания «слишком тёмно, текст не видно» был сгенерирован и выбран
+новый светлый макет: тёплая бумага васи, контрастный тушь-текст, киноварные
+акценты, сгенерированный hero с тории и фотографичные карточки коллекций.
+Макет перенесён в `dev-preview/`, а Flutter-приложение теперь стартует со
+**светлой темы по умолчанию** (тёмную можно включить вручную в настройках).
+Ключевые изображения лежат в `hikari/assets/wallpapers/generated-*.jpg`.
 
 ## Настоящее Flutter-приложение
 
@@ -14,8 +24,8 @@ Workflow [`.github/workflows/deploy-hikari-web.yml`](.github/workflows/deploy-hi
 результат артефактом `hikari-web` и деплоит его через `actions/deploy-pages`.
 
 **Опубликовано:** https://otshelniks.github.io/InterfaceForge/ — страница отдаёт
-`Hikari · 光`, а `go_router` переводит на `#/home`. Последний успешный деплой:
-[run 45486530211](https://github.com/OTSHELNIKS/InterfaceForge/actions/runs/45486530211).
+`Hikari · 光`, а `go_router` переводит на `#/home`. История деплоев — во
+[вкладке Actions](https://github.com/OTSHELNIKS/InterfaceForge/actions/workflows/deploy-hikari-web.yml).
 
 Pages в этом репозитории уже включён (**Source: GitHub Actions**). При переносе
 workflow в новый репозиторий этот шаг нужно сделать один раз вручную: эндпоинт
@@ -51,7 +61,8 @@ npm install
 npm run dev
 ```
 
-Откройте выданный адрес (порт 5173). Превью само обновляется при изменении
+Откройте выданный адрес (порт 5173). Превью использует выбранный светлый
+сгенерированный дизайн и само обновляется при изменении
 `hikari/assets/catalog/catalog.json`, картинок, шрифтов, `dev-preview/src/*`
 и любых файлов проекта. В интерфейсе есть кнопка **«Редактор»**: правка
 каталога и CSS сохраняется прямо в файлы репозитория, а вкладка

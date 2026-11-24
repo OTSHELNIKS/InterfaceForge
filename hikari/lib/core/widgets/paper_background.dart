@@ -23,8 +23,8 @@ class PaperBackground extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: dark
-              ? const [Color(0xFF14100E), Color(0xFF17110F), Color(0xFF120E0C)]
-              : const [Color(0xFFF9F3EA), AppColors.paper, Color(0xFFF5EEE4)],
+              ? const [Color(0xFF241D19), Color(0xFF2A211C), Color(0xFF1F1815)]
+              : const [Color(0xFFFDF8F1), AppColors.paper, Color(0xFFF6EEE3)],
         ),
       ),
       child: Stack(

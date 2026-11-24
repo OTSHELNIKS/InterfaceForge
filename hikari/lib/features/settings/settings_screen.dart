@@ -79,7 +79,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _resetAll() async {
     await ref.read(activeThemeIdProvider.notifier).set(null);
-    await ref.read(themeModeProvider.notifier).set(ThemeMode.system);
+    await ref.read(themeModeProvider.notifier).set(ThemeMode.light);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Настройки оформления сброшены')),
@@ -206,7 +206,6 @@ class _ModeSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tiles = [
-      (ThemeMode.system, 'Системный', Icons.brightness_auto_rounded),
       (ThemeMode.light, 'Светлый', Icons.light_mode_rounded),
       (ThemeMode.dark, 'Тёмный', Icons.dark_mode_rounded),
     ];

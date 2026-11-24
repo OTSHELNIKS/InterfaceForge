@@ -19,6 +19,7 @@ class AppTheme {
     final scheme = _scheme(isDark ? Brightness.dark : Brightness.light, accent);
     final base = ThemeData(
       useMaterial3: true,
+      brightness: isDark ? Brightness.dark : Brightness.light,
       colorScheme: scheme,
       scaffoldBackgroundColor: scheme.surface,
       visualDensity: VisualDensity.standard,
@@ -26,7 +27,8 @@ class AppTheme {
       fontFamily: AppText.sans,
     );
 
-    final textTheme = _textTheme(isDark, accent).merge(base.textTheme);
+    // Наши стили должны перекрывать дефолтную типографику, а не наоборот.
+    final textTheme = base.textTheme.merge(_textTheme(isDark, accent));
     return base.copyWith(
       textTheme: textTheme,
       primaryTextTheme: TextTheme(
@@ -268,14 +270,14 @@ class AppTheme {
       onSurface: dark ? AppColors.paperOnDark : AppColors.sumi,
       surfaceDim: dark ? AppColors.sumiDeep : AppColors.paper,
       surfaceBright: dark ? AppColors.sumiRaised : AppColors.card,
-      surfaceContainerLowest: dark ? const Color(0xFF0E0B09) : AppColors.card,
+      surfaceContainerLowest: dark ? const Color(0xFF1C1613) : AppColors.card,
       surfaceContainerLow: dark ? AppColors.sumiDeep : AppColors.paper,
       surfaceContainer: dark ? AppColors.sumiCard : const Color(0xFFFBF6EE),
       surfaceContainerHigh: dark ? AppColors.sumiRaised : const Color(0xFFF3ECE2),
       surfaceContainerHighest: dark ? AppColors.sumiRaised : const Color(0xFFEDE4D8),
       onSurfaceVariant: dark ? AppColors.inkMutedDark : AppColors.inkMuted,
-      outline: dark ? const Color(0xFF3C322C) : const Color(0xFFD8CBBE),
-      outlineVariant: dark ? const Color(0xFF2B2320) : const Color(0xFFEAE0D4),
+      outline: dark ? const Color(0xFF5A4A40) : const Color(0xFFD8CBBE),
+      outlineVariant: dark ? const Color(0xFF44372F) : const Color(0xFFEAE0D4),
       inverseSurface: dark ? AppColors.paper : AppColors.sumi,
       onInverseSurface: dark ? AppColors.sumi : AppColors.paper,
       inversePrimary: dark ? accent : accent.withValues(alpha: 0.9),

@@ -27,8 +27,7 @@ class CollectionCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          width: 208,
-          padding: const EdgeInsets.all(18),
+          width: 240,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
             color: dark ? AppColors.sumiCard : AppColors.card,
@@ -43,79 +42,98 @@ class CollectionCard extends StatelessWidget {
               ),
             ],
           ),
-          child: Stack(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Positioned(
-                right: -6,
-                top: -18,
-                child: Text(
-                  collection.nameJa,
-                  style: AppText.kanji(
-                    68,
-                    color: collection.color.withValues(alpha: 0.22),
+              SizedBox(
+                height: 116,
+                child: Image.asset(
+                  _imageFor(collection.id),
+                  fit: BoxFit.cover,
+                  filterQuality: FilterQuality.high,
+                  errorBuilder: (context, error, stack) => Container(
+                    color: collection.color.withValues(alpha: 0.35),
                   ),
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 9,
-                        height: 9,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: collection.color,
-                          boxShadow: [
-                            BoxShadow(
-                              color: collection.color.withValues(alpha: 0.55),
-                              blurRadius: 8,
+              Padding(
+                padding: const EdgeInsets.all(18),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -6,
+                      top: -18,
+                      child: Text(
+                        collection.nameJa,
+                        style: AppText.kanji(
+                          68,
+                          color: collection.color.withValues(alpha: 0.22),
+                        ),
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 9,
+                              height: 9,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: collection.color,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: collection.color.withValues(alpha: 0.55),
+                                    blurRadius: 8,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              collection.name.toUpperCase(),
+                              style: AppText.label(
+                                9.5,
+                                color: theme.colorScheme.onSurfaceVariant,
+                                letterSpacing: 0.2,
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        collection.name.toUpperCase(),
-                        style: AppText.label(
-                          9.5,
-                          color: theme.colorScheme.onSurfaceVariant,
-                          letterSpacing: 0.2,
+                        const SizedBox(height: 14),
+                        Text(
+                          collection.name,
+                          style: AppText.display(
+                            23,
+                            color: theme.colorScheme.onSurface,
+                            height: 1.05,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    collection.name,
-                    style: AppText.display(
-                      23,
-                      color: theme.colorScheme.onSurface,
-                      height: 1.05,
+                        const SizedBox(height: 8),
+                        Text(
+                          collection.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.body(
+                            11.5,
+                            color: theme.colorScheme.onSurfaceVariant,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          '$count ${_plural(count)}',
+                          style: AppText.body(
+                            11,
+                            color: collection.color,
+                            weight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    collection.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.body(
-                      11.5,
-                      color: theme.colorScheme.onSurfaceVariant,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '$count ${_plural(count)}',
-                    style: AppText.body(
-                      11,
-                      color: collection.color,
-                      weight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -123,6 +141,16 @@ class CollectionCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _imageFor(String id) {
+  return switch (id) {
+    'akane' => 'assets/wallpapers/generated-collection-akane.jpg',
+    'sakura' => 'assets/wallpapers/generated-collection-sakura.jpg',
+    'sumi' => 'assets/wallpapers/generated-collection-sumi.jpg',
+    'aoi' => 'assets/wallpapers/generated-collection-aoi.jpg',
+    _ => 'assets/wallpapers/generated-hero.jpg',
+  };
 }
 
 String _plural(int n) {

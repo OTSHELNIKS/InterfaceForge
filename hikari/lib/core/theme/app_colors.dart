@@ -28,16 +28,16 @@ class AppColors {
   /// Приглушённые чернила для второстепенного текста.
   static const Color inkMuted = Color(0xFF8C7F75);
 
-  /// Тёмная тема.
-  static const Color sumiDeep = Color(0xFF14100E);
-  static const Color sumiCard = Color(0xFF1F1916);
-  static const Color sumiRaised = Color(0xFF26201C);
-  static const Color paperOnDark = Color(0xFFF2E9DE);
-  static const Color inkMutedDark = Color(0xFFB3A49A);
+  /// Тёмная тема: не чёрная, а тёплый угольный сумi — текст остаётся читаемым.
+  static const Color sumiDeep = Color(0xFF241D19);
+  static const Color sumiCard = Color(0xFF302721);
+  static const Color sumiRaised = Color(0xFF3B3029);
+  static const Color paperOnDark = Color(0xFFFFF8EE);
+  static const Color inkMutedDark = Color(0xFFD6C4B4);
 
   /// Линии и разделители.
-  static const Color hairline = Color(0x141E1917);
-  static const Color hairlineDark = Color(0x1FF7F1E8);
+  static const Color hairline = Color(0x1F1E1917);
+  static const Color hairlineDark = Color(0x33F7F1E8);
 
   /// Цвета типов работ.
   static const Color themeType = Color(0xFFC9A227);

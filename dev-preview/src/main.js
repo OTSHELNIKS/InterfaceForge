@@ -21,6 +21,22 @@ const NAV = [
   { route: 'settings', label: 'Настройки', icon: 'sliders' },
 ];
 
+const TOP_NAV = [
+  { route: 'home', label: 'Обзор' },
+  { route: 'catalog', label: 'Каталог' },
+  { route: 'favorites', label: 'Избранное' },
+  { route: 'settings', label: 'Настройки' },
+];
+
+const COLLECTION_IMAGES = {
+  akane: 'assets/wallpapers/generated-collection-akane.jpg',
+  sakura: 'assets/wallpapers/generated-collection-sakura.jpg',
+  sumi: 'assets/wallpapers/generated-collection-sumi.jpg',
+  aoi: 'assets/wallpapers/generated-collection-aoi.jpg',
+};
+
+const HERO_IMAGE = 'assets/wallpapers/generated-hero.jpg';
+
 const ICON_PATHS = {
   sparkle:
     '<path d="M12 3l1.7 4.8L18.5 9.5l-4.8 1.7L12 16l-1.7-4.8L5.5 9.5l4.8-1.7L12 3z"/><path d="M19 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2z"/>',
@@ -62,7 +78,7 @@ const state = {
   route: 'home',
   lastRoute: 'home',
   detail: null,
-  theme: localStorage.getItem('hikari.theme') || 'system',
+  theme: localStorage.getItem('hikari.theme') || 'light',
   favorites: new Set(JSON.parse(localStorage.getItem('hikari.favorites') || '[]')),
   filters: { query: '', type: null, collection: null, sort: 'newest' },
   activeThemeId: localStorage.getItem('hikari.activeTheme') || null,
@@ -151,9 +167,9 @@ function isLight(hex) {
 }
 
 function applyTheme() {
-  const dark =
-    state.theme === 'dark' ||
-    (state.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  // Светлая бумага — базовый образ Hikari. Тёмную тему включают вручную.
+  if (state.theme === 'system') state.theme = 'light';
+  const dark = state.theme === 'dark';
   const accent = accentOf();
   const root = document.documentElement;
   root.dataset.theme = dark ? 'dark' : 'light';
@@ -288,33 +304,34 @@ function itemCard(item) {
   const col = collectionById(item.collection);
   const fav = state.favorites.has(item.id);
   return h('article', {
-    class: 'card poster',
+    class: 'card work-card',
     onclick: () => openDetail(item.id),
     tabindex: '0',
     onkeydown: (e) => { if (e.key === 'Enter') openDetail(item.id); },
   },
-    h('img', { src: assetUrl(item.asset), alt: item.title, loading: 'lazy' }),
-    h('div', { class: 'poster__scrim' }),
-    h('div', { class: 'poster__top' },
-      h('span', {
-        class: 'badge',
-        style: `--badge:${item.type === 'theme' ? '#C9A227' : '#C9362B'}`,
-      }, item.type === 'theme' ? 'Тема' : 'Обои'),
-      h('button', {
-        class: 'fav-btn' + (fav ? ' is-fav' : ''),
-        'data-fav': item.id,
-        title: fav ? 'Убрать из избранного' : 'В избранное',
-        html: icon(fav ? 'heartFill' : 'heart', 18),
-        onclick: (e) => { e.stopPropagation(); toggleFavorite(item.id); },
-      }),
+    h('div', { class: 'work-card__media' },
+      h('img', { src: assetUrl(item.assetLandscape || item.asset), alt: item.title, loading: 'lazy' }),
+      h('div', { class: 'work-card__top' },
+        h('span', {
+          class: 'badge',
+          style: `--badge:${item.type === 'theme' ? '#C9A227' : '#C9362B'}`,
+        }, item.type === 'theme' ? 'Тема' : 'Обои'),
+        h('button', {
+          class: 'fav-btn' + (fav ? ' is-fav' : ''),
+          'data-fav': item.id,
+          title: fav ? 'Убрать из избранного' : 'В избранное',
+          html: icon(fav ? 'heartFill' : 'heart', 18),
+          onclick: (e) => { e.stopPropagation(); toggleFavorite(item.id); },
+        }),
+      ),
     ),
-    h('div', { class: 'poster__bottom' },
-      h('div', { class: 'poster__ja' }, item.titleJa),
-      h('h3', { class: 'poster__title' }, item.title),
-      h('div', { class: 'poster__meta' },
+    h('div', { class: 'work-card__body' },
+      h('div', { class: 'work-card__ja' }, item.titleJa),
+      h('h3', { class: 'work-card__title' }, item.title),
+      h('div', { class: 'work-card__meta' },
         h('span', {}, col ? col.name : item.collection),
         h('span', { class: 'dot' }, '·'),
-        h('span', {}, `${item.popularity}/100`),
+        h('span', {}, '3840 × 2160'),
       ),
       paletteRow(item.colors),
     ),
@@ -346,20 +363,23 @@ function toggleFavorite(id) {
 
 function renderHome() {
   const wotd = wallpaperOfDay();
-  const popular = [...catalog.items].sort((a, b) => b.popularity - a.popularity).slice(0, 6);
+  const items = [...catalog.items].sort((a, b) => b.popularity - a.popularity);
+  const featured = items[0];
+  const similar = items.slice(1, 4);
 
-  return h('div', { class: 'screen' },
+  return h('div', { class: 'screen screen--home' },
     h('section', { class: 'hero' },
-      h('img', { class: 'hero__img', src: assetUrl(wotd?.assetLandscape || catalog.items[0].assetLandscape), alt: '' }),
+      h('img', { class: 'hero__img', src: assetUrl(HERO_IMAGE), alt: '' }),
       h('div', { class: 'hero__fade' }),
       h('span', { class: 'hero__kanji' }, '光'),
       h('div', { class: 'hero__inner' },
         h('div', { class: 'hero__eyebrow' }, 'HIKARI · 光 · 2026'),
-        h('h1', { class: 'hero__title' }, 'Свет,', h('br'), 'который остаётся'),
-        h('p', { class: 'hero__brush' }, 'Свет, который остаётся'),
-        h('p', { class: 'hero__desc' }, 'Каждый экран — маленькая галерея. Японские темы и обои для компьютера и телефона.'),
+        h('h1', { class: 'hero__title' }, 'Красота', h('br'), 'в простых вещах'),
+        h('p', { class: 'hero__desc' },
+          'Японские обои и темы, которые наполняют ваш день атмосферой гармонии.'),
         h('div', { class: 'hero__buttons' },
-          h('button', { class: 'btn btn--primary', onclick: () => navigate('catalog') }, 'Смотреть каталог'),
+          h('button', { class: 'btn btn--primary', onclick: () => navigate('catalog') },
+            'Открыть коллекции →'),
           wotd
             ? h('button', { class: 'btn btn--light', onclick: () => openDetail(wotd.id) }, 'Обои дня')
             : null,
@@ -369,38 +389,8 @@ function renderHome() {
     ),
 
     h('section', { class: 'section' },
-      sectionHead('ВЫБОР РЕДАКТОРА', 'Обои дня',
-        h('button', {
-          class: 'text-btn',
-          onclick: () => {
-            state.filters = { query: '', type: 'wallpaper', collection: null, sort: 'newest' };
-            navigate('catalog');
-          },
-        }, 'Все обои →')),
-      wotd ? h('div', { class: 'wotd' },
-        h('div', { class: 'wotd__media', onclick: () => openDetail(wotd.id) },
-          h('img', { src: assetUrl(wotd.asset), alt: wotd.title }),
-        ),
-        h('div', { class: 'wotd__body' },
-          h('div', { class: 'eyebrow' }, 'ОБОИ ДНЯ'),
-          h('div', { class: 'wotd__ja' }, wotd.titleJa),
-          h('h3', { class: 'wotd__title' }, wotd.title),
-          h('p', { class: 'wotd__desc' }, wotd.description),
-          h('div', { class: 'wotd__meta' },
-            h('span', {}, collectionById(wotd.collection)?.name || wotd.collection),
-            h('span', { class: 'dot' }, '·'),
-            h('span', {}, formatDate(wotd.date)),
-          ),
-          paletteRow(wotd.colors),
-          h('div', { class: 'wotd__actions' },
-            h('button', { class: 'btn btn--primary', onclick: () => openDetail(wotd.id) }, 'Открыть работу'),
-          ),
-        ),
-      ) : null,
-    ),
-
-    h('section', { class: 'section' },
-      sectionHead('КОЛЛЕКЦИИ', 'Четыре настроения'),
+      sectionHead('ОБЗОР', 'Четыре настроения',
+        h('button', { class: 'text-btn', onclick: () => navigate('catalog') }, 'Смотреть все →')),
       h('div', { class: 'collections' },
         ...catalog.collections.map((col) => {
           const count = catalog.items.filter((i) => i.collection === col.id).length;
@@ -412,19 +402,61 @@ function renderHome() {
               navigate('catalog');
             },
           },
-            h('span', { class: 'collection__ja' }, col.nameJa),
-            h('span', { class: 'collection__name' }, col.name),
-            h('span', { class: 'collection__desc' }, col.description),
-            h('span', { class: 'collection__count' }, `${count} ${plural(count, ['работа', 'работы', 'работ'])} →`),
+            h('span', { class: 'collection__media' },
+              h('img', { src: assetUrl(COLLECTION_IMAGES[col.id] || HERO_IMAGE), alt: col.name, loading: 'lazy' }),
+            ),
+            h('span', { class: 'collection__body' },
+              h('span', { class: 'collection__name' }, col.name),
+              h('span', { class: 'collection__desc' }, col.description),
+              h('span', { class: 'collection__count' },
+                `${count} ${plural(count, ['обоев', 'обоев', 'обоев'])} →`),
+            ),
           );
         }),
       ),
     ),
 
     h('section', { class: 'section' },
-      sectionHead('ПОПУЛЯРНОЕ', 'Самое востребованное',
-        h('button', { class: 'text-btn', onclick: () => navigate('catalog') }, 'Весь каталог →')),
-      itemGrid(popular),
+      sectionHead('КАТАЛОГ', 'Все работы',
+        h('button', { class: 'text-btn', onclick: () => navigate('catalog') }, 'Фильтры →')),
+      h('div', { class: 'home-catalog' },
+        h('div', { class: 'grid home-catalog__grid' }, ...items.map(itemCard)),
+        h('aside', { class: 'home-detail' },
+          h('div', { class: 'home-detail__media' },
+            h('img', { src: assetUrl(featured.assetLandscape || featured.asset), alt: featured.title }),
+            h('button', {
+              class: 'fav-btn' + (state.favorites.has(featured.id) ? ' is-fav' : ''),
+              'data-fav': featured.id,
+              title: 'В избранное',
+              html: icon(state.favorites.has(featured.id) ? 'heartFill' : 'heart', 18),
+              onclick: (e) => { e.stopPropagation(); toggleFavorite(featured.id); },
+            }),
+          ),
+          h('div', { class: 'home-detail__body' },
+            h('div', { class: 'home-detail__ja' }, featured.titleJa),
+            h('h3', {}, featured.title),
+            h('p', {}, featured.description),
+            h('div', { class: 'tag-row' },
+              ...featured.tags.slice(0, 3).map((tag) => h('span', { class: 'tag' }, tag)),
+            ),
+            paletteRow(featured.colors),
+            h('div', { class: 'home-detail__res' }, '3840 × 2160 · 2560 × 1440 · Mobile'),
+            h('button', {
+              class: 'btn btn--primary btn--block',
+              onclick: () => openDetail(featured.id),
+            }, 'Открыть работу →'),
+            h('div', { class: 'home-detail__similar' },
+              h('span', { class: 'settings-label' }, 'Похожие обои'),
+              h('div', { class: 'similar-grid' },
+                ...similar.map((item) => h('button', {
+                  class: 'similar-thumb',
+                  onclick: () => openDetail(item.id),
+                }, h('img', { src: assetUrl(item.assetLandscape || item.asset), alt: item.title }))),
+              ),
+            ),
+          ),
+        ),
+      ),
     ),
   );
 }
@@ -595,7 +627,6 @@ function renderSettings() {
       ),
       h('div', { class: 'settings-label' }, 'Активная тема'),
       h('div', { class: 'mode-row' },
-        themeModeChip('system', 'Системный', 'monitor'),
         themeModeChip('light', 'Светлый', 'sun'),
         themeModeChip('dark', 'Тёмный', 'moon'),
       ),
@@ -960,10 +991,30 @@ function renderShell() {
       h('header', { class: 'topbar' },
         h('div', { class: 'topbar__left' },
           h('button', { class: 'topbar__mobile-brand', onclick: () => navigate('home') }, '光 Hikari'),
-          h('span', { class: 'topbar__tagline' }, 'Свет, который остаётся'),
+          h('label', { class: 'topbar__search' },
+            h('span', { class: 'search__icon', html: icon('search', 18) }),
+            h('input', {
+              type: 'search',
+              placeholder: 'Поиск обоев, тем, тегов…',
+              onkeydown: (e) => {
+                if (e.key === 'Enter') {
+                  state.filters.query = e.target.value;
+                  navigate('catalog');
+                }
+              },
+            }),
+          ),
+        ),
+        h('nav', { class: 'topbar__nav' },
+          ...TOP_NAV.map((item) => h('button', {
+            class: 'topbar__pill' + (state.route === item.route ? ' is-active' : ''),
+            'data-route': item.route,
+            onclick: () => navigate(item.route),
+          }, item.label)),
         ),
         h('div', { class: 'topbar__right' },
           h('span', { class: 'live-pill' }, h('span', { class: 'live-dot' }), 'LIVE'),
+          h('span', { class: 'topbar__lang' }, 'RU'),
           h('button', {
             id: 'theme-btn',
             class: 'icon-btn',

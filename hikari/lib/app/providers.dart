@@ -44,11 +44,9 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
   ThemeMode build() {
     final prefs = ref.watch(sharedPreferencesProvider);
     final saved = prefs.getString(_key);
-    return switch (saved) {
-      'light' => ThemeMode.light,
-      'dark' => ThemeMode.dark,
-      _ => ThemeMode.system,
-    };
+    // Светлая бумага — основной образ Hikari. Тёмная тема остаётся
+    // осознанным выбором в настройках, а не сюрпризом от ОС браузера.
+    return saved == 'dark' ? ThemeMode.dark : ThemeMode.light;
   }
 
   Future<void> set(ThemeMode mode) async {
