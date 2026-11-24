@@ -105,8 +105,10 @@ jobs:
     needs: build
     if: needs.build.outputs.pages_ready == 'true'
     runs-on: ubuntu-latest
+    # github-pages по умолчанию разрешает деплой только из main; отдельное
+    # окружение без branch policy позволяет публиковать и из рабочей ветки.
     environment:
-      name: github-pages
+      name: hikari-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy
