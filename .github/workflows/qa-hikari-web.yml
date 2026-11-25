@@ -9,7 +9,7 @@ on:
       - '.github/workflows/qa-hikari-web.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: hikari-qa
@@ -197,13 +197,10 @@ jobs:
               failedRequests: failedRequests.slice(0, 20),
             };
 
-            const smallJpeg = await sharp(shot).resize(600, 630, { fit: 'fill' }).jpeg({ quality: 58 }).toBuffer();
-            const b64 = smallJpeg.toString('base64');
+            fs.mkdirSync('design/qa', { recursive: true });
+            fs.writeFileSync('design/qa/report.json', JSON.stringify(report, null, 2));
+            await sharp(shot).resize(1200, 1261, { fit: 'fill' }).jpeg({ quality: 82 }).toFile('design/qa/screenshot.jpg');
             console.log('QA_REPORT:' + JSON.stringify(report));
-            console.log('QA_MARKER:BEGIN_SHOT');
-            for (let i = 0; i < b64.length; i += 160) console.log('QA_SHOT:' + b64.slice(i, i + 160));
-            console.log('QA_MARKER:END_SHOT');
-            console.log('QA_SHOT_BYTES:' + smallJpeg.length);
 
             await browser.close();
           })().catch((err) => {
@@ -226,6 +223,15 @@ jobs:
             exit 1
           fi
           node /tmp/hikari-qa/shot.cjs
+
+      - name: Publish QA artifacts to branch
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f design/qa/report.json design/qa/screenshot.jpg
+          git commit -m "QA: publish rendered screenshot and report" || echo "No QA changes to commit"
+          git push origin HEAD:refs/heads/arena/45285b5c-interfaceforge
 
       - name: Upload full-size screenshot
         if: always()
