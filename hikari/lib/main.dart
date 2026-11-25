@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hikari/app/app.dart';
 import 'package:hikari/app/providers.dart';
-import 'package:hikari/features/home/design_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
@@ -27,12 +26,6 @@ Future<void> main() async {
   // тёмная ОС внезапно делала интерфейс почти чёрным. Теперь база — светлая.
   if (prefs.getString('hikari.themeMode') == 'system') {
     await prefs.setString('hikari.themeMode', 'light');
-  }
-
-  // В выбранном макете несколько сердечек уже отмечены. Это обычное состояние
-  // «Избранное», а не декоративная картинка: пользователь может его изменить.
-  if (!prefs.containsKey('hikari.favorites')) {
-    await prefs.setStringList('hikari.favorites', kDesignFeaturedFavorites);
   }
 
   runApp(

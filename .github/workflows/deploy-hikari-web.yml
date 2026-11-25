@@ -49,7 +49,7 @@ jobs:
 
       - name: Unit tests
         working-directory: hikari
-        run: flutter test test/catalog_test.dart test/providers_test.dart test/assets_test.dart test/mobile_home_test.dart
+        run: flutter test test/catalog_test.dart test/providers_test.dart test/assets_test.dart test/website_test.dart
 
       - name: Build web release
         working-directory: hikari

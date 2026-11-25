@@ -1,21 +1,17 @@
 name: QA Hikari Web Screenshot
-
 on:
   workflow_dispatch:
   push:
-    branches:
-      - arena/45285b5c-interfaceforge
+    branches: [arena/45285b5c-interfaceforge]
     paths:
       - '.github/workflows/qa-hikari-web.yml'
+      - 'dev-preview/qa-website.cjs'
       - 'hikari/**'
-
 permissions:
   contents: write
-
 concurrency:
   group: hikari-qa
   cancel-in-progress: true
-
 jobs:
   qa:
     name: Render and audit Flutter Web
@@ -24,256 +20,27 @@ jobs:
     env:
       PLAYWRIGHT_BROWSERS_PATH: /tmp/hikari-qa/browsers
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter 3.50.1
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
         with:
           channel: stable
           flutter-version: 3.50.1
           cache: true
-
-      - name: Build web release
+      - name: Build web
         working-directory: hikari
         run: |
           flutter pub get
           flutter build web --release --base-href /InterfaceForge/
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
-
-      - name: Install headless browser and image tools
+      - name: Install browser
         run: |
           mkdir -p /tmp/hikari-qa
           npm install --prefix /tmp/hikari-qa --no-audit --no-fund playwright sharp
           /tmp/hikari-qa/node_modules/.bin/playwright install --with-deps chromium
-
-      - name: Render, interact and emit QA report
+      - name: Audit pages and deep links
         run: |
-          cat > /tmp/hikari-qa/shot.cjs <<'NODE'
-          const { chromium } = require('/tmp/hikari-qa/node_modules/playwright');
-          const sharp = require('/tmp/hikari-qa/node_modules/sharp');
-          const fs = require('node:fs');
-
-          async function collectText(page) {
-            return page.evaluate(() => {
-              const out = [];
-              const seen = new Set();
-              function walk(root) {
-                try {
-                  const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-                  let n;
-                  while ((n = tw.nextNode())) {
-                    const t = (n.textContent || '').trim();
-                    if (t && !seen.has(t)) {
-                      seen.add(t);
-                      out.push(t);
-                    }
-                  }
-                  for (const el of root.querySelectorAll('*')) {
-                    const label = el.getAttribute && el.getAttribute('aria-label');
-                    if (label && !seen.has(label)) { seen.add(label); out.push(label); }
-                    if (el.shadowRoot) walk(el.shadowRoot);
-                    if (el.tagName === 'INPUT' && el.value) {
-                      const v = 'INPUT:' + el.value;
-                      if (!seen.has(v)) { seen.add(v); out.push(v); }
-                    }
-                  }
-                } catch (_) {}
-              }
-              walk(document);
-              return out;
-            });
-          }
-
-          async function ariaSnapshot(page) {
-            try {
-              return (await page.locator('body').ariaSnapshot()).slice(0, 3000);
-            } catch (e) {
-              return 'unavailable: ' + String(e && e.message ? e.message : e);
-            }
-          }
-
-          async function raw(buf) {
-            return sharp(buf).resize(306, 322, { fit: 'fill' }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
-          }
-
-          async function diffPct(a, b) {
-            const A = await raw(a);
-            const B = await raw(b);
-            const n = Math.min(A.data.length, B.data.length);
-            let changed = 0;
-            for (let i = 0; i < n; i += 3) {
-              const d = (Math.abs(A.data[i] - B.data[i]) + Math.abs(A.data[i + 1] - B.data[i + 1]) + Math.abs(A.data[i + 2] - B.data[i + 2])) / 3;
-              if (d > 12) changed++;
-            }
-            return Number(((changed / (n / 3)) * 100).toFixed(1));
-          }
-
-          (async () => {
-            const consoleErrors = [];
-            const pageErrors = [];
-            const badResponses = [];
-            const failedRequests = [];
-
-            const browser = await chromium.launch({
-              headless: true,
-              args: [
-                '--no-sandbox',
-                '--disable-dev-shm-usage',
-                '--use-gl=angle',
-                '--use-angle=swiftshader',
-                '--enable-unsafe-swiftshader',
-                '--ignore-gpu-blocklist',
-              ],
-            });
-            const page = await browser.newPage({ viewport: { width: 1223, height: 1286 }, deviceScaleFactor: 1 });
-            page.on('console', (msg) => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
-            page.on('pageerror', (err) => pageErrors.push(err.message));
-            page.on('response', (res) => { if (res.status() >= 400) badResponses.push({ url: res.url(), status: res.status() }); });
-            page.on('requestfailed', (req) => failedRequests.push({ url: req.url(), error: req.failure()?.errorText || 'unknown' }));
-
-            await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle', timeout: 90000 });
-            await page.waitForTimeout(5000);
-
-            const dom = await page.evaluate(() => ({
-              title: document.title,
-              url: location.href,
-              canvasCount: document.querySelectorAll('canvas').length,
-              glassPane: !!document.querySelector('flt-glass-pane'),
-              scrollWidth: document.documentElement.scrollWidth,
-              clientWidth: document.documentElement.clientWidth,
-              scrollHeight: document.documentElement.scrollHeight,
-              clientHeight: document.documentElement.clientHeight,
-            }));
-
-            const initialText = await collectText(page);
-            const initialAria = await ariaSnapshot(page);
-            const shot = await page.screenshot({ clip: { x: 0, y: 0, width: 1223, height: 1286 }, type: 'png' });
-            fs.writeFileSync('/tmp/hikari-qa/screenshot.png', shot);
-            const meta = await sharp(shot).metadata();
-
-            // Яркость/контраст: пустая или чёрная страница сразу была бы видна.
-            const small = await raw(shot);
-            let sum = 0;
-            let sum2 = 0;
-            const pixels = small.data.length / small.info.channels;
-            for (let i = 0; i < small.data.length; i += small.info.channels) {
-              const v = (small.data[i] + small.data[i + 1] + small.data[i + 2]) / 3;
-              sum += v;
-              sum2 += v * v;
-            }
-            const mean = sum / pixels;
-            const stdDev = Math.sqrt(Math.max(0, sum2 / pixels - mean * mean));
-
-            // Грубая близость к выбранному референсу (шрифты и антиалиасинг дают разницу).
-            const ref = await sharp('design/hikari-light-concept.png').resize(306, 322, { fit: 'fill' }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
-            let diffSum = 0;
-            let changed = 0;
-            const count = Math.min(ref.data.length, small.data.length);
-            for (let i = 0; i < count; i += 3) {
-              const d = (Math.abs(ref.data[i] - small.data[i]) + Math.abs(ref.data[i + 1] - small.data[i + 1]) + Math.abs(ref.data[i + 2] - small.data[i + 2])) / 3;
-              diffSum += d;
-              if (d > 30) changed++;
-            }
-            const mae = diffSum / (count / 3);
-            const changedPct = (changed / (count / 3)) * 100;
-
-            // Клик по первой карточке должен обновить правую панель.
-            await page.mouse.click(300, 700);
-            await page.waitForTimeout(800);
-            const afterCard = await collectText(page);
-            const afterCardAria = await ariaSnapshot(page);
-            const clickShot = await page.screenshot({ clip: { x: 0, y: 0, width: 1223, height: 1286 }, type: 'png' });
-            const clickDiffPct = await diffPct(shot, clickShot);
-            const interactionWorks = clickDiffPct > 0.5 ||
-              (initialText.some((t) => t.includes('Фудзи')) && afterCard.some((t) => t.includes('Утро в Киото'))) ||
-              (initialAria.includes('Фудзи') && afterCardAria.includes('Утро в Киото'));
-
-            // Поиск должен фильтровать сетку.
-            await page.mouse.click(300, 30);
-            await page.keyboard.type('сакура');
-            await page.waitForTimeout(800);
-            const afterSearch = await collectText(page);
-            const afterSearchAria = await ariaSnapshot(page);
-            const searchShot = await page.screenshot({ clip: { x: 0, y: 0, width: 1223, height: 1286 }, type: 'png' });
-            const searchDiffPct = await diffPct(clickShot, searchShot);
-            const searchWorks = searchDiffPct > 0.5 ||
-              afterSearch.some((t) => t.includes('Весеннее отражение')) ||
-              afterSearchAria.includes('Весеннее отражение');
-            await page.keyboard.press('Control+A');
-            await page.keyboard.press('Backspace');
-            await page.waitForTimeout(500);
-
-            // Мобильная ширина: проверяем горизонтальный overflow и сохраняем кадр.
-            await page.setViewportSize({ width: 390, height: 844 });
-            await page.reload({ waitUntil: 'networkidle' });
-            await page.waitForTimeout(1500);
-            const mobile = await page.evaluate(() => ({
-              scrollWidth: document.documentElement.scrollWidth,
-              clientWidth: document.documentElement.clientWidth,
-              scrollHeight: document.documentElement.scrollHeight,
-              clientHeight: document.documentElement.clientHeight,
-            }));
-            const mobileText = await collectText(page);
-            const mobileAria = await ariaSnapshot(page);
-            const mobileShot = await page.screenshot({ clip: { x: 0, y: 0, width: 390, height: 844 }, type: 'png' });
-            await page.mouse.move(200, 700);
-            await page.mouse.wheel(0, 700);
-            await page.waitForTimeout(1000);
-            const mobileCatalogShot = await page.screenshot({ clip: { x: 0, y: 0, width: 390, height: 844 }, type: 'png' });
-            const mobileScrollDiffPct = await diffPct(mobileShot, mobileCatalogShot);
-
-            const report = {
-              dom,
-              screenshot: { width: meta.width, height: meta.height, bytes: shot.length },
-              desktopOverflowX: dom.scrollWidth - dom.clientWidth,
-              desktopOverflowY: dom.scrollHeight - dom.clientHeight,
-              mobileOverflowX: mobile.scrollWidth - mobile.clientWidth,
-              mobileOverflowY: mobile.scrollHeight - mobile.clientHeight,
-              mobileLayout: 'reflow',
-              mobileScrollDiffPct,
-              mobileAria: mobileAria.slice(0, 1200),
-              mobileTextSample: mobileText.filter((t) => t.length < 80).slice(0, 25),
-              brightness: { mean: Number(mean.toFixed(1)), stdDev: Number(stdDev.toFixed(1)) },
-              reference: { mae: Number(mae.toFixed(1)), changedPct: Number(changedPct.toFixed(1)) },
-              interactionWorks,
-              searchWorks,
-              clickDiffPct,
-              searchDiffPct,
-              ariaTextLength: initialAria.length,
-              ariaHasCatalog: initialAria.includes('Каталог'),
-              semanticTextCount: initialText.length,
-              ariaInitial: initialAria.slice(0, 1200),
-              ariaAfterCard: afterCardAria.slice(0, 1200),
-              ariaAfterSearch: afterSearchAria.slice(0, 1200),
-              searchSample: afterSearch.filter((t) => t.length < 60).slice(0, 25),
-              textSample: initialText.filter((t) => t.length < 60).slice(0, 25),
-              consoleErrors: consoleErrors.slice(0, 20),
-              pageErrors: pageErrors.slice(0, 20),
-              badResponses: badResponses.slice(0, 20),
-              failedRequests: failedRequests.slice(0, 20),
-            };
-
-            fs.mkdirSync('design/qa', { recursive: true });
-            fs.writeFileSync('design/qa/report.json', JSON.stringify(report, null, 2));
-            await sharp(shot).resize(1200, 1261, { fit: 'fill' }).jpeg({ quality: 82 }).toFile('design/qa/screenshot.jpg');
-            await sharp(clickShot).resize(1200, 1261, { fit: 'fill' }).jpeg({ quality: 82 }).toFile('design/qa/screenshot-after-click.jpg');
-            await sharp(searchShot).resize(1200, 1261, { fit: 'fill' }).jpeg({ quality: 82 }).toFile('design/qa/screenshot-after-search.jpg');
-            await sharp(mobileShot).resize(390, 844, { fit: 'fill' }).jpeg({ quality: 82 }).toFile('design/qa/screenshot-mobile.jpg');
-            await sharp(mobileCatalogShot).jpeg({ quality: 82 }).toFile('design/qa/screenshot-mobile-catalog.jpg');
-            console.log('QA_REPORT:' + JSON.stringify(report));
-
-            await browser.close();
-          })().catch((err) => {
-            console.error('QA_FATAL:' + (err && err.stack ? err.stack : String(err)));
-            process.exit(1);
-          });
-          NODE
-
           node dev-preview/serve-flutter-web.cjs hikari/build/web > /tmp/hikari-qa/server.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
@@ -282,29 +49,19 @@ jobs:
             if curl -fsS http://127.0.0.1:4173/ > /dev/null; then READY=1; break; fi
             sleep 1
           done
-          if [ "$READY" != "1" ]; then
-            echo 'QA_FATAL: static server did not start'
-            cat /tmp/hikari-qa/server.log
-            exit 1
-          fi
-          node /tmp/hikari-qa/shot.cjs
-
-      - name: Publish QA artifacts to branch
-        if: success()
+          if [ "$READY" != "1" ]; then cat /tmp/hikari-qa/server.log; exit 1; fi
+          node dev-preview/qa-website.cjs
+      - name: Publish QA artifacts
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f design/qa/report.json design/qa/screenshot.jpg \
-            design/qa/screenshot-after-click.jpg design/qa/screenshot-after-search.jpg \
-            design/qa/screenshot-mobile.jpg design/qa/screenshot-mobile-catalog.jpg
-          git commit -m "QA: publish rendered screenshot and report" || echo "No QA changes to commit"
+          git add -f design/qa/website-*.jpg design/qa/website-report.json
+          git diff --cached --quiet || git commit -m "QA: publish website audit"
           git push origin HEAD:refs/heads/arena/45285b5c-interfaceforge
-
-      - name: Upload full-size screenshot
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: hikari-qa-screenshot
-          path: /tmp/hikari-qa/screenshot.png
+          name: hikari-website-qa
+          path: design/qa/website-*
           if-no-files-found: warn
-          retention-days: 1
+          retention-days: 3
