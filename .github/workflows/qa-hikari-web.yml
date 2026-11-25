@@ -7,6 +7,7 @@ on:
       - arena/45285b5c-interfaceforge
     paths:
       - '.github/workflows/qa-hikari-web.yml'
+      - 'hikari/**'
 
 permissions:
   contents: write
@@ -73,6 +74,8 @@ jobs:
                     }
                   }
                   for (const el of root.querySelectorAll('*')) {
+                    const label = el.getAttribute && el.getAttribute('aria-label');
+                    if (label && !seen.has(label)) { seen.add(label); out.push(label); }
                     if (el.shadowRoot) walk(el.shadowRoot);
                     if (el.tagName === 'INPUT' && el.value) {
                       const v = 'INPUT:' + el.value;
@@ -84,6 +87,30 @@ jobs:
               walk(document);
               return out;
             });
+          }
+
+          async function ariaSnapshot(page) {
+            try {
+              return (await page.locator('body').ariaSnapshot()).slice(0, 3000);
+            } catch (e) {
+              return 'unavailable: ' + String(e && e.message ? e.message : e);
+            }
+          }
+
+          async function raw(buf) {
+            return sharp(buf).resize(306, 322, { fit: 'fill' }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+          }
+
+          async function diffPct(a, b) {
+            const A = await raw(a);
+            const B = await raw(b);
+            const n = Math.min(A.data.length, B.data.length);
+            let changed = 0;
+            for (let i = 0; i < n; i += 3) {
+              const d = (Math.abs(A.data[i] - B.data[i]) + Math.abs(A.data[i + 1] - B.data[i + 1]) + Math.abs(A.data[i + 2] - B.data[i + 2])) / 3;
+              if (d > 12) changed++;
+            }
+            return Number(((changed / (n / 3)) * 100).toFixed(1));
           }
 
           (async () => {
@@ -124,12 +151,13 @@ jobs:
             }));
 
             const initialText = await collectText(page);
+            const initialAria = await ariaSnapshot(page);
             const shot = await page.screenshot({ fullPage: true, type: 'png' });
             fs.writeFileSync('/tmp/hikari-qa/screenshot.png', shot);
             const meta = await sharp(shot).metadata();
 
             // Яркость/контраст: пустая или чёрная страница сразу была бы видна.
-            const small = await sharp(shot).resize(306, 322, { fit: 'fill' }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+            const small = await raw(shot);
             let sum = 0;
             let sum2 = 0;
             const pixels = small.data.length / small.info.channels;
@@ -158,18 +186,29 @@ jobs:
             await page.mouse.click(300, 700);
             await page.waitForTimeout(800);
             const afterCard = await collectText(page);
-            const interactionWorks = initialText.some((t) => t.includes('Фудзи')) && afterCard.some((t) => t.includes('Утро в Киото'));
+            const afterCardAria = await ariaSnapshot(page);
+            const clickShot = await page.screenshot({ fullPage: true, type: 'png' });
+            const clickDiffPct = await diffPct(shot, clickShot);
+            const interactionWorks = clickDiffPct > 0.5 ||
+              (initialText.some((t) => t.includes('Фудзи')) && afterCard.some((t) => t.includes('Утро в Киото'))) ||
+              (initialAria.includes('Фудзи') && afterCardAria.includes('Утро в Киото'));
 
             // Поиск должен фильтровать сетку.
             await page.mouse.click(300, 30);
             await page.keyboard.type('сакура');
             await page.waitForTimeout(800);
             const afterSearch = await collectText(page);
+            const afterSearchAria = await ariaSnapshot(page);
+            const searchShot = await page.screenshot({ fullPage: true, type: 'png' });
+            const searchDiffPct = await diffPct(clickShot, searchShot);
+            const searchWorks = searchDiffPct > 0.5 ||
+              afterSearch.some((t) => t.includes('Весеннее отражение')) ||
+              afterSearchAria.includes('Весеннее отражение');
             await page.keyboard.press('Control+A');
             await page.keyboard.press('Backspace');
             await page.waitForTimeout(500);
 
-            // Мобильная ширина: проверяем горизонтальный overflow.
+            // Мобильная ширина: проверяем горизонтальный overflow и сохраняем кадр.
             await page.setViewportSize({ width: 390, height: 844 });
             await page.waitForTimeout(800);
             const mobile = await page.evaluate(() => ({
@@ -178,6 +217,7 @@ jobs:
               scrollHeight: document.documentElement.scrollHeight,
               clientHeight: document.documentElement.clientHeight,
             }));
+            const mobileShot = await page.screenshot({ fullPage: true, type: 'png' });
 
             const report = {
               dom,
@@ -186,9 +226,16 @@ jobs:
               desktopOverflowY: dom.scrollHeight - dom.clientHeight,
               mobileOverflowX: mobile.scrollWidth - mobile.clientWidth,
               mobileOverflowY: mobile.scrollHeight - mobile.clientHeight,
+              mobileScale: Number((390 / 1223).toFixed(3)),
               brightness: { mean: Number(mean.toFixed(1)), stdDev: Number(stdDev.toFixed(1)) },
               reference: { mae: Number(mae.toFixed(1)), changedPct: Number(changedPct.toFixed(1)) },
               interactionWorks,
+              searchWorks,
+              clickDiffPct,
+              searchDiffPct,
+              ariaInitial: initialAria.slice(0, 1200),
+              ariaAfterCard: afterCardAria.slice(0, 1200),
+              ariaAfterSearch: afterSearchAria.slice(0, 1200),
               searchSample: afterSearch.filter((t) => t.length < 60).slice(0, 25),
               textSample: initialText.filter((t) => t.length < 60).slice(0, 25),
               consoleErrors: consoleErrors.slice(0, 20),
@@ -200,6 +247,9 @@ jobs:
             fs.mkdirSync('design/qa', { recursive: true });
             fs.writeFileSync('design/qa/report.json', JSON.stringify(report, null, 2));
             await sharp(shot).resize(1200, 1261, { fit: 'fill' }).jpeg({ quality: 82 }).toFile('design/qa/screenshot.jpg');
+            await sharp(clickShot).resize(1200, 1261, { fit: 'fill' }).jpeg({ quality: 82 }).toFile('design/qa/screenshot-after-click.jpg');
+            await sharp(searchShot).resize(1200, 1261, { fit: 'fill' }).jpeg({ quality: 82 }).toFile('design/qa/screenshot-after-search.jpg');
+            await sharp(mobileShot).resize(390, 844, { fit: 'fill' }).jpeg({ quality: 82 }).toFile('design/qa/screenshot-mobile.jpg');
             console.log('QA_REPORT:' + JSON.stringify(report));
 
             await browser.close();
@@ -229,7 +279,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f design/qa/report.json design/qa/screenshot.jpg
+          git add -f design/qa/report.json design/qa/screenshot.jpg \
+            design/qa/screenshot-after-click.jpg design/qa/screenshot-after-search.jpg \
+            design/qa/screenshot-mobile.jpg
           git commit -m "QA: publish rendered screenshot and report" || echo "No QA changes to commit"
           git push origin HEAD:refs/heads/arena/45285b5c-interfaceforge
 

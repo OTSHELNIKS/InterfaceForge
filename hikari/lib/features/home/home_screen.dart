@@ -19,6 +19,19 @@ const Color _body = Color(0xFF6B5E54);
 const Color _ink = Color(0xFF1E1917);
 const Color _heroText = Color(0xFFF4E8DE);
 
+const List<double> _filterW = <double>[42, 70, 62, 56, 90, 84, 84, 52, 52, 52];
+
+String _sortLabel(CatalogSort sort) {
+  switch (sort) {
+    case CatalogSort.popular:
+      return 'Популярные';
+    case CatalogSort.newest:
+      return 'Сначала новые';
+    case CatalogSort.alphabetical:
+      return 'По алфавиту';
+  }
+}
+
 const List<String> kSideKanji = <String>[
   '光',
   'は',
@@ -60,6 +73,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _similarOffset = 0;
   String _language = 'RU';
   Color _accent = AppColors.vermilion;
+  Color _circleColor = AppColors.gold;
 
   @override
   void dispose() {
@@ -291,7 +305,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           width: 40,
           height: 300,
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
               for (final c in kSideKanji)
                 Text(c, style: AppText.kanji(13, color: _muted)),
@@ -423,7 +437,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: GestureDetector(
               onTap: _showAccentMenu,
               child: Container(
-                decoration: BoxDecoration(color: _accent, shape: BoxShape.circle),
+                decoration: BoxDecoration(color: _circleColor, shape: BoxShape.circle),
               ),
             ),
           ),
@@ -444,6 +458,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFF1ECE3),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE7DFD3)),
       ),
       child: TextField(
         controller: _search,
@@ -471,6 +486,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFF1ECE3),
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE7DFD3)),
       ),
       child: Row(
         children: <Widget>[
@@ -766,14 +782,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onSelected: (value) => setState(() => _sort = value),
       itemBuilder: (context) => <PopupMenuEntry<CatalogSort>>[
         for (final sort in CatalogSort.values)
-          PopupMenuItem<CatalogSort>(value: sort, child: Text(sort.label)),
+          PopupMenuItem<CatalogSort>(value: sort, child: Text(_sortLabel(sort))),
       ],
       child: Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.end,
         children: <Widget>[
           Text(
-            'Сортировка: ${_sort.label}',
+            'Сортировка: ${_sortLabel(_sort)}',
             style: AppText.body(10, color: _muted),
           ),
           const Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: _muted),
@@ -783,11 +799,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _filterChips() {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 6,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
-        for (final label in kDesignFilters) _filterChip(label),
+        for (var i = 0; i < kDesignFilters.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          SizedBox(width: _filterW[i], child: _filterChip(kDesignFilters[i])),
+        ],
       ],
     );
   }
@@ -808,7 +827,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
         child: Container(
           height: 28,
-          padding: const EdgeInsets.symmetric(horizontal: 13),
+          padding: const EdgeInsets.symmetric(horizontal: 7),
           decoration: BoxDecoration(
             color: active ? _accent : _chip,
             borderRadius: BorderRadius.circular(14),
@@ -816,8 +835,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Center(
             child: Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: AppText.body(
-                10,
+                9,
                 color: active ? Colors.white : _muted,
                 weight: active ? FontWeight.w600 : FontWeight.w400,
               ),
@@ -906,12 +927,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         color: _card,
         borderRadius: BorderRadius.circular(14),
       ),
-      padding: const EdgeInsets.all(7),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Stack(
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: <Widget>[
+          Positioned(
+            left: 7,
+            top: 3,
+            width: 229,
+            height: 211,
+            child: Stack(
               children: <Widget>[
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
@@ -930,33 +954,64 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Text(item.title, style: AppText.display(20, color: _ink)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: <Widget>[
-                for (final tag in item.detailTags) _tagChip(tag),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
+          ),
+          Positioned(
+            left: 7,
+            top: 222,
+            width: 229,
+            height: 26,
+            child: Text(item.title, style: AppText.display(19, color: _ink)),
+          ),
+          Positioned(
+            left: 7,
+            top: 250,
+            width: 229,
+            height: 24,
+            child: _tagRow(item.detailTags),
+          ),
+          Positioned(
+            left: 7,
+            top: 280,
+            width: 229,
+            height: 86,
+            child: Text(
               item.description,
-              style: AppText.body(12, color: _body, height: 1.5),
+              maxLines: 5,
+              overflow: TextOverflow.ellipsis,
+              style: AppText.body(11, color: _body, height: 1.35),
             ),
-            const SizedBox(height: 14),
-            Text('Палитра', style: AppText.display(16, color: _ink)),
-            const SizedBox(height: 10),
-            Row(
+          ),
+          Positioned(
+            left: 7,
+            top: 372,
+            width: 229,
+            height: 20,
+            child: Text('Палитра', style: AppText.display(15, color: _ink)),
+          ),
+          Positioned(
+            left: 7,
+            top: 392,
+            width: 229,
+            height: 26,
+            child: Row(
               children: <Widget>[
                 for (final color in item.palette) _paletteDot(color),
               ],
             ),
-            const SizedBox(height: 16),
-            Text('Доступные разрешения', style: AppText.display(16, color: _ink)),
-            const SizedBox(height: 10),
-            Wrap(
+          ),
+          Positioned(
+            left: 7,
+            top: 438,
+            width: 229,
+            height: 20,
+            child: Text('Доступные разрешения', style: AppText.display(15, color: _ink)),
+          ),
+          Positioned(
+            left: 7,
+            top: 458,
+            width: 229,
+            height: 70,
+            child: Wrap(
               spacing: 8,
               runSpacing: 8,
               children: <Widget>[
@@ -964,8 +1019,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   SizedBox(width: 105, child: _resolutionChip(i)),
               ],
             ),
-            const SizedBox(height: 16),
-            Row(
+          ),
+          Positioned(
+            left: 7,
+            top: 520,
+            width: 229,
+            height: 34,
+            child: Row(
               children: <Widget>[
                 Expanded(
                   child: FilledButton(
@@ -974,15 +1034,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       backgroundColor: _accent,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 34),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      textStyle: AppText.label(12, color: Colors.white, letterSpacing: 0.02),
+                      textStyle: AppText.label(11, color: Colors.white, letterSpacing: 0.02),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: const <Widget>[
-                        Icon(Icons.download_rounded, size: 16),
-                        SizedBox(width: 8),
+                        Icon(Icons.download_rounded, size: 15),
+                        SizedBox(width: 6),
                         Text('Применить обои'),
                       ],
                     ),
@@ -1006,7 +1067,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ],
                   child: Container(
                     width: 34,
-                    height: 42,
+                    height: 34,
                     decoration: BoxDecoration(
                       border: Border.all(color: _chip),
                       borderRadius: BorderRadius.circular(10),
@@ -1016,35 +1077,61 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Text('Похожие обои', style: AppText.display(16, color: _ink)),
-            const SizedBox(height: 10),
-            _similarThumbs(item),
+          ),
+          Positioned(
+            left: 7,
+            top: 580,
+            width: 229,
+            height: 20,
+            child: Text('Похожие обои', style: AppText.display(15, color: _ink)),
+          ),
+          Positioned(
+            left: 7,
+            top: 602,
+            width: 229,
+            height: 52,
+            child: _similarThumbs(item),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tagRow(List<String> tags) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          for (var i = 0; i < tags.length; i++) ...[
+            if (i > 0) const SizedBox(width: 4),
+            _tagChip(tags[i]),
           ],
-        ),
+        ],
       ),
     );
   }
 
   Widget _tagChip(String tag) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
         color: _chip,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(tag, style: AppText.body(10, color: _muted)),
+      child: Text(tag, style: AppText.body(9, color: _muted)),
     );
   }
 
   Widget _paletteDot(Color color) {
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: 6),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
           onTap: () {
-            setState(() => _accent = color);
+            _setAccent(color);
             _showSnack('Акцент изменён');
           },
           child: Container(
@@ -1075,7 +1162,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Text(
               kDesignResolutions[index],
               style: AppText.body(
-                10,
+                9,
                 color: active ? _accent : _body,
                 weight: active ? FontWeight.w600 : FontWeight.w400,
               ),
@@ -1186,7 +1273,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     switch (_sort) {
       case CatalogSort.popular:
-        list.sort((a, b) => b.popularity.compareTo(a.popularity));
+        // В выбранном макете «Популярные» = порядок работ на референсе.
+        list.sort((a, b) => a.index.compareTo(b.index));
         break;
       case CatalogSort.newest:
         list.sort((a, b) => a.index.compareTo(b.index));
@@ -1216,9 +1304,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _showSnack(was ? '$label удалено из избранного' : '$label добавлено в избранное');
   }
 
+  void _setAccent(Color color) {
+    setState(() {
+      _accent = color;
+      _circleColor = color;
+    });
+  }
+
   void _applyWallpaper(DesignItem item) {
     ref.read(activeThemeIdProvider.notifier).set(item.catalogId);
-    setState(() => _accent = item.palette.first);
+    _setAccent(item.palette.first);
     _showSnack('Обои «${item.title}» применены к интерфейсу Hikari');
   }
 
@@ -1283,7 +1378,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   cursor: SystemMouseCursors.click,
                   child: GestureDetector(
                     onTap: () {
-                      setState(() => _accent = color);
+                      _setAccent(color);
                       Navigator.of(dialogContext).pop();
                     },
                     child: Container(
