@@ -17,10 +17,12 @@
     "/about",
     "/favorites"
   ],
+  "sidebarPersisted": true,
+  "favoritePersisted": true,
   "downloadChecked": {
-    "width": 1920,
-    "height": 1080,
-    "sha256Matches": true
+    "desktop": "1920×1080",
+    "phone": "1080×1920",
+    "bothSha256Match": true
   },
   "errors": [],
   "badResponses": [],
