@@ -1,0 +1,43 @@
+{
+  "dom": {
+    "title": "Hikari",
+    "url": "http://127.0.0.1:4173/#/home",
+    "canvasCount": 0,
+    "glassPane": true,
+    "scrollWidth": 1223,
+    "clientWidth": 1223,
+    "scrollHeight": 1286,
+    "clientHeight": 1286
+  },
+  "screenshot": {
+    "width": 1223,
+    "height": 1286,
+    "bytes": 1426100
+  },
+  "desktopOverflowX": 0,
+  "desktopOverflowY": 0,
+  "mobileOverflowX": 0,
+  "mobileOverflowY": 0,
+  "brightness": {
+    "mean": 170,
+    "stdDev": 78.4
+  },
+  "reference": {
+    "mae": 27.5,
+    "changedPct": 26.7
+  },
+  "interactionWorks": false,
+  "searchSample": [
+    "Hikari",
+    "flutter typography measurement",
+    "INPUT:сакура"
+  ],
+  "textSample": [
+    "Hikari",
+    "flutter typography measurement"
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "badResponses": [],
+  "failedRequests": []
+}
