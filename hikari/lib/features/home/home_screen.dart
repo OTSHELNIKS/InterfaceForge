@@ -12,8 +12,8 @@ const double _designWidth = 1223;
 const double _designHeight = 1286;
 
 const Color _paper = Color(0xFFF2EDE3);
-const Color _card = Color(0xFFFCF8F2);
-const Color _chip = Color(0xFFEFE9E0);
+const Color _card = Color(0xFFF8F4EC);
+const Color _chip = Color(0xFFEAE4DA);
 const Color _muted = Color(0xFF8C7F75);
 const Color _body = Color(0xFF6B5E54);
 const Color _ink = Color(0xFF1E1917);
@@ -1224,10 +1224,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     bool circle = false,
   }) {
     final active = favorites.contains(id);
-    final icon = Icon(
+    final outline = Icon(
       active ? Icons.favorite_rounded : Icons.favorite_border_rounded,
       size: circle ? 18 : 17,
-      color: circle ? (active ? _accent : AppColors.vermilion) : (active ? _accent : Colors.white),
+      color: circle ? (active ? _accent : AppColors.vermilion) : Colors.white,
     );
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -1238,9 +1238,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 width: 32,
                 height: 32,
                 decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                child: Center(child: icon),
+                child: Center(child: outline),
               )
-            : icon,
+            : active
+                ? Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(color: _accent, shape: BoxShape.circle),
+                    child: const Center(
+                      child: Icon(Icons.favorite_rounded, size: 13, color: Colors.white),
+                    ),
+                  )
+                : outline,
       ),
     );
   }

@@ -121,6 +121,16 @@ const List<String> kDesignFilters = <String>[
   'Лето',
 ];
 
+/// Отмеченные сердечки в изначальном состоянии выбранного макета.
+const List<String> kDesignFeaturedFavorites = <String>[
+  'hinomaru',
+  'yozakura',
+  'kurogane',
+  'ink-and-gold',
+  'kannon',
+  'asanoha',
+];
+
 const List<String> kDesignResolutions = <String>[
   '3840 × 2160',
   '2560 × 1440',
