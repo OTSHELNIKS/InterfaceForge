@@ -363,11 +363,11 @@ class _WebsiteCatalogState extends ConsumerState<WebsiteCatalog> {
             onSelected: (value) => _setQuery('sort', value == 'reference' ? null : value),
             itemBuilder: (context) => const <PopupMenuEntry<String>>[
               PopupMenuItem(value: 'reference', child: Text('Рекомендуемые')),
-              PopupMenuItem(value: 'popular', child: Text('Популярные')),
+              PopupMenuItem(value: 'popular', child: Text('По оценке подборки')),
               PopupMenuItem(value: 'name', child: Text('По алфавиту')),
             ],
             child: Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
-              Text('Сортировка: ${sort == 'popular' ? 'Популярные' : sort == 'name' ? 'По алфавиту' : 'Рекомендуемые'}', style: AppText.body(13, color: muted)),
+              Text('Сортировка: ${sort == 'popular' ? 'По оценке подборки' : sort == 'name' ? 'По алфавиту' : 'Рекомендуемые'}', style: AppText.body(13, color: muted)),
               const Icon(Icons.keyboard_arrow_down_rounded, color: muted),
             ])),
           ),
@@ -562,27 +562,54 @@ class WebsiteAbout extends StatelessWidget {
 
 /// Отдельный каталог оригинальных файлов, не связанных с превью концепции.
 class WallpaperCatalog extends ConsumerStatefulWidget {
-  const WallpaperCatalog({super.key});
+  const WallpaperCatalog({super.key, required this.uri});
+  final Uri uri;
   @override
   ConsumerState<WallpaperCatalog> createState() => _WallpaperCatalogState();
 }
 class _WallpaperCatalogState extends ConsumerState<WallpaperCatalog> {
-  String query = '';
-  String orientation = 'desktop';
+  late final TextEditingController _search;
+  Timer? _debounce;
+  @override
+  void initState() {
+    super.initState();
+    _search = TextEditingController(text: widget.uri.queryParameters['q'] ?? '');
+  }
+  @override
+  void didUpdateWidget(covariant WallpaperCatalog oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldQ = oldWidget.uri.queryParameters['q'] ?? '';
+    final newQ = widget.uri.queryParameters['q'] ?? '';
+    if (oldQ != newQ && _search.text != newQ) {
+      _search.value = TextEditingValue(text: newQ, selection: TextSelection.collapsed(offset: newQ.length));
+    }
+  }
+  @override
+  void dispose() { _debounce?.cancel(); _search.dispose(); super.dispose(); }
+  void _setQuery(String key, String? value) {
+    final params = Map<String, String>.from(widget.uri.queryParameters);
+    if (value == null || value.isEmpty) { params.remove(key); } else { params[key] = value; }
+    context.go(Uri(path: '/wallpapers', queryParameters: params.isEmpty ? null : params).toString());
+  }
   @override
   Widget build(BuildContext context) {
+    final query = (widget.uri.queryParameters['q'] ?? '').trim().toLowerCase();
+    final orientation = widget.uri.queryParameters['format'] == 'phone' ? 'phone' : 'desktop';
     final catalog = ref.watch(catalogProvider);
     return PageFrame(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[
       sectionTitle('Обои', eyebrow: 'Hikari · 光', description: 'Настоящие файлы для компьютера и телефона. Изображения отличаются от превью дизайн-концепции.'),
       const SizedBox(height: 22),
-      TextField(onChanged: (value) => setState(() => query = value.trim().toLowerCase()), decoration: InputDecoration(
+      TextField(controller: _search, onChanged: (value) {
+        _debounce?.cancel();
+        _debounce = Timer(const Duration(milliseconds: 250), () { if (mounted) _setQuery('q', value.trim()); });
+      }, onSubmitted: (value) { _debounce?.cancel(); _setQuery('q', value.trim()); }, decoration: InputDecoration(
         labelText: 'Поиск обоев', prefixIcon: const Icon(Icons.search_rounded), filled: true, fillColor: card,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       )),
       const SizedBox(height: 14),
       Wrap(spacing: 8, runSpacing: 8, children: <Widget>[
-        ChoiceChip(label: const Text('Для компьютера'), selected: orientation == 'desktop', onSelected: (_) => setState(() => orientation = 'desktop')),
-        ChoiceChip(label: const Text('Для телефона'), selected: orientation == 'phone', onSelected: (_) => setState(() => orientation = 'phone')),
+        ChoiceChip(label: const Text('Для компьютера'), selected: orientation == 'desktop', onSelected: (_) => _setQuery('format', null)),
+        ChoiceChip(label: const Text('Для телефона'), selected: orientation == 'phone', onSelected: (_) => _setQuery('format', 'phone')),
       ]),
       const SizedBox(height: 20),
       catalog.when(
@@ -593,7 +620,7 @@ class _WallpaperCatalogState extends ConsumerState<WallpaperCatalog> {
           if (items.isEmpty) return Text('Ничего не найдено. Попробуйте другой запрос.', style: AppText.body(14, color: muted));
           return Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
             Text('${items.length} ${workCount(items.length)}', style: AppText.body(13, color: muted)),
-            const SizedBox(height: 14), WallpaperGrid(items: items, orientation: orientation),
+            const SizedBox(height: 14), WallpaperGrid(items: items, orientation: orientation, returnTo: widget.uri.toString()),
           ]);
         },
       ),
@@ -621,7 +648,7 @@ class SavedWallpapers extends ConsumerWidget {
       return Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
         Text('Обои', style: AppText.display(22, color: ink)),
         const SizedBox(height: 14),
-        if (items.isEmpty) Text('Сохранённых обоев пока нет.', style: AppText.body(14, color: muted)) else WallpaperGrid(items: items, orientation: 'desktop'),
+        if (items.isEmpty) Text('Сохранённых обоев пока нет.', style: AppText.body(14, color: muted)) else WallpaperGrid(items: items, orientation: 'desktop', returnTo: '/favorites'),
       ]);
     },
     );
@@ -629,9 +656,10 @@ class SavedWallpapers extends ConsumerWidget {
 }
 
 class WallpaperGrid extends ConsumerWidget {
-  const WallpaperGrid({super.key, required this.items, required this.orientation});
+  const WallpaperGrid({super.key, required this.items, required this.orientation, required this.returnTo});
   final List<HikariItem> items;
   final String orientation;
+  final String returnTo;
   @override
   Widget build(BuildContext context, WidgetRef ref) => LayoutBuilder(builder: (context, c) {
     final columns = c.maxWidth >= 850 ? 4 : c.maxWidth >= 580 ? 3 : c.maxWidth >= 310 ? 2 : 1;
@@ -646,7 +674,7 @@ class WallpaperGrid extends ConsumerWidget {
           Expanded(child: Stack(fit: StackFit.expand, children: <Widget>[
             Material(color: card, borderRadius: BorderRadius.circular(12), clipBehavior: Clip.antiAlias,
               child: InkWell(key: ValueKey<String>('wallpaper-${item.id}'),
-                onTap: () => context.go('/wallpapers/${item.id}?format=$orientation'),
+                onTap: () => context.go(Uri(path: '/wallpapers/${item.id}', queryParameters: <String, String>{'format': orientation, 'from': returnTo}).toString()),
                 child: Semantics(label: 'Открыть обои ${item.title}', button: true,
                   child: Ink.image(image: AssetImage(orientation == 'phone' ? item.asset : item.assetLandscape), fit: BoxFit.cover)),
               ),
@@ -672,7 +700,11 @@ class WallpaperDetail extends ConsumerWidget {
   final String id;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final portrait = GoRouterState.of(context).uri.queryParameters['format'] == 'phone';
+    final params = GoRouterState.of(context).uri.queryParameters;
+    final portrait = params['format'] == 'phone';
+    final from = params['from'];
+    final returnTo = from != null && (from == '/favorites' || from == '/wallpapers' || from.startsWith('/wallpapers?')) ? from : '/wallpapers';
+    void selectFormat(String format) => context.go(Uri(path: '/wallpapers/$id', queryParameters: <String, String>{'format': format, if (from != null) 'from': from}).toString());
     return PageFrame(child: ref.watch(catalogProvider).when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Text('Не удалось загрузить работу: $error'),
@@ -683,7 +715,7 @@ class WallpaperDetail extends ConsumerWidget {
         ]);
         final saved = ref.watch(favoritesProvider).contains('wallpaper:${item.id}');
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-          TextButton.icon(onPressed: () => context.go('/wallpapers'), icon: const Icon(Icons.arrow_back_rounded), label: const Text('Все обои')),
+          TextButton.icon(onPressed: () => context.go(returnTo), icon: const Icon(Icons.arrow_back_rounded), label: const Text('Назад к списку')),
           const SizedBox(height: 14),
           LayoutBuilder(builder: (context, constraints) {
             final wide = constraints.maxWidth >= 760;
@@ -698,8 +730,8 @@ class WallpaperDetail extends ConsumerWidget {
               const SizedBox(height: 18), Text('Формат', style: AppText.display(19, color: ink)),
               const SizedBox(height: 10),
               Wrap(spacing: 8, runSpacing: 8, children: <Widget>[
-                ChoiceChip(label: const Text('Компьютер · 1920 × 1080'), selected: !portrait, onSelected: (_) => context.go('/wallpapers/${item.id}?format=desktop')),
-                ChoiceChip(label: const Text('Телефон · 1080 × 1920'), selected: portrait, onSelected: (_) => context.go('/wallpapers/${item.id}?format=phone')),
+                ChoiceChip(label: const Text('Компьютер · 1920 × 1080'), selected: !portrait, onSelected: (_) => selectFormat('desktop')),
+                ChoiceChip(label: const Text('Телефон · 1080 × 1920'), selected: portrait, onSelected: (_) => selectFormat('phone')),
               ]),
               const SizedBox(height: 12),
               Text('Выберите формат: превью и скачиваемый файл переключаются вместе.', style: AppText.body(13, color: muted)),

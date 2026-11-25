@@ -64,6 +64,37 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('wallpaper catalog keeps filters on return', (tester) async {
+    await launch(tester, const Size(1223, 844));
+    await tester.tap(find.text('Обои').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Для телефона'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'сакура');
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    expect(find.text('Somei-yoshino'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey<String>('wallpaper-somei-yoshino')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Телефон · 1080 × 1920')).selected, isTrue);
+    await tester.tap(find.text('Назад к списку'));
+    await tester.pumpAndSettle();
+    expect(find.text('Somei-yoshino'), findsOneWidget);
+    expect(tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Для телефона')).selected, isTrue);
+    expect(find.text('Akane no Sora'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('mobile drawer opens and navigates', (tester) async {
+    await launch(tester, const Size(390, 844));
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Коллекции').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Четыре настроения японской эстетики. Выберите подборку, чтобы увидеть её работы.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('mobile navigation, search and favorites', (tester) async {
     await launch(tester, const Size(390, 844));
     await tester.tap(find.byTooltip('Каталог'));
