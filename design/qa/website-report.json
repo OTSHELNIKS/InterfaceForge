@@ -12,10 +12,16 @@
     "/home",
     "/catalog?tag=Природа",
     "/item/akane-no-sora (reload)",
+    "/wallpapers/akane-no-sora (desktop and phone)",
     "/collections",
     "/about",
     "/favorites"
   ],
+  "downloadChecked": {
+    "width": 1920,
+    "height": 1080,
+    "sha256Matches": true
+  },
   "errors": [],
   "badResponses": [],
   "requests": []
