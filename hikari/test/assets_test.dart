@@ -23,6 +23,8 @@ void main() {
       'assets/design/logo-bird.png',
       'assets/design/decor-blossom.png',
       'assets/design/decor-mountains.png',
+      'assets/design/decor-sakura-branch.png',
+      'assets/design/decor-mountains-soft.png',
       'assets/design/collection-1.jpg',
       'assets/design/work-01.jpg',
       'assets/design/work-16.jpg',

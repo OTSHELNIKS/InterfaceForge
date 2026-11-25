@@ -190,7 +190,7 @@ class SitePaperDecoration extends StatelessWidget {
         child: Opacity(
           opacity: mobile ? 0.20 : 0.25,
           child: Transform.flip(flipX: true, child: Image.asset(
-            'assets/design/decor-blossom.png', fit: BoxFit.contain,
+            'assets/design/decor-sakura-branch.png', fit: BoxFit.contain,
           )),
         ),
       ),
@@ -198,7 +198,7 @@ class SitePaperDecoration extends StatelessWidget {
         left: 0, bottom: 0,
         width: mountainWidth, height: mountainWidth * 100 / 185,
         child: Opacity(opacity: mobile ? 0.28 : 0.34, child: Image.asset(
-          'assets/design/decor-mountains.png', fit: BoxFit.contain,
+          'assets/design/decor-mountains-soft.png', fit: BoxFit.contain,
         )),
       ),
     ])));
@@ -215,9 +215,39 @@ class PageFrame extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 1220),
       child: Padding(
         padding: EdgeInsets.fromLTRB(MediaQuery.sizeOf(context).width < 600 ? 16 : 32, 24, MediaQuery.sizeOf(context).width < 600 ? 16 : 32, 56),
-        child: child,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[
+          child,
+          const SiteFooter(),
+        ]),
       ),
     )),
+  );
+}
+
+/// Иллюстрированное завершение страницы, с оригинальной веткой из макета.
+class SiteFooter extends StatelessWidget {
+  const SiteFooter({super.key});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 56),
+    child: Container(
+      decoration: const BoxDecoration(border: Border(top: BorderSide(color: line))),
+      padding: const EdgeInsets.only(top: 20),
+      child: Row(children: <Widget>[
+        Expanded(flex: 4, child: SizedBox(height: 210, child: IgnorePointer(child: ExcludeSemantics(
+          child: Image.asset('assets/design/decor-blossom.png', fit: BoxFit.contain, alignment: Alignment.centerLeft),
+        )))),
+        const SizedBox(width: 16),
+        Expanded(flex: 5, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+          Text('Hikari · 光', style: AppText.display(24, color: ink)),
+          const SizedBox(height: 10),
+          Text('Японская эстетика в простых вещах.', style: AppText.body(13, color: muted)),
+          const SizedBox(height: 8),
+          TextButton(onPressed: () => context.go('/about'), child: const Text('О проекте →')),
+        ])),
+      ]),
+    ),
   );
 }
 
