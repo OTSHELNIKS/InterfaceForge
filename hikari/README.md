@@ -17,7 +17,7 @@ Flutter MVP для Windows и Android: локальный каталог тем 
 python3 tools/check_assets.py   # пути к ассетам из catalog.json существуют
 flutter pub get
 flutter analyze
-flutter test test/catalog_test.dart test/providers_test.dart test/assets_test.dart
+flutter test test/catalog_test.dart test/providers_test.dart test/assets_test.dart test/website_test.dart
 flutter run -d windows   # на Windows с Visual Studio и workload Desktop development with C++
 flutter run -d android   # с Android SDK и совместимой версией JDK
 flutter build windows
@@ -73,25 +73,18 @@ flutter build web --release --base-href /InterfaceForge/
 Интерфейс стартует в светлой теме «васи»: тёмная ОС больше не делает его
 почти чёрным, а тёмную тему можно включить осознанно в настройках.
 
-Главная веб-страница (`#/home`) — **1:1 реализация выбранного макета
-настоящими виджетами** [`../design/hikari-light-concept.png`](../design/hikari-light-concept.png).
-Целый скриншот как фон не используется: sidebar, поиск, hero, текст, кнопки,
-коллекции, фильтры, сетка из 16 работ и правая панель собраны из
-`Text`, `TextField`, `GridView`, `Image`, `PopupMenuButton`, `FilledButton`
-и других виджетов. В `assets/design/` лежат только вырезанные из референса
-графические элементы — hero, логотип, декор, 4 обложки, 16 миниатюр, большая
-картинка детали и похожие обои. Поиск, фильтры, избранное, выбор карточки,
-палитра, разрешения и акцент работают на главной. Стандартный `NavigationRail`
-и нижняя навигация скрыты только на главной.
+Веб-версия — отдельные маршруты `#/home`, `#/catalog`, `#/collections`,
+`#/favorites`, `#/wallpapers`, `#/wallpapers/:id`, `#/item/:id` и `#/about`.
+Боковое меню можно полностью скрыть; избранное и состояние меню хранятся
+в браузере. Для фильтров каталога превью и формата обоев используются параметры URL.
 
-Остальные экраны Flutter используют светлую тему и сгенерированные изображения
-из `assets/wallpapers/generated-*.jpg`.
-
-Для веба `SystemService` использует условный импорт вместо `dart:io`:
-`lib/core/services/system_service_staging_io.dart` (Windows/Android) и
-`system_service_staging.dart` (web). Канал `hikari/system` на вебе отсутствует,
-поэтому темы применяются только внутри приложения, а установка обоев возвращает
-`MissingPluginException` с понятным сообщением.
+**Важно о содержимом:** работы из референса в `assets/design/work-*.jpg` —
+маленькие изображения, вырезанные из концепции, а не оригиналы высокого
+разрешения. Раздел «Каталог превью» показывает и скачивает только эти файлы,
+с указанием реального размера. В разделе «Обои» отдельно представлены реальные
+файлы из `assets/catalog/catalog.json`: 1920×1080 и 1080×1920. Это другие
+изображения, их нельзя подменять соответствующими превью концепции. Условия
+коммерческого использования материалов ещё не опубликованы.
 
 ## Ограничения платформ
 

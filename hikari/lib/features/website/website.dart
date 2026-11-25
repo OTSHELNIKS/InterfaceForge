@@ -133,7 +133,8 @@ class _WebsiteShellState extends ConsumerState<WebsiteShell> {
     return Scaffold(
       backgroundColor: paper,
       drawer: wide ? null : Drawer(child: _navigation(collapsed: false, drawer: true)),
-      appBar: wide ? null : AppBar(
+      appBar: wide && !_collapsed ? null : AppBar(
+        leading: wide ? IconButton(tooltip: 'Развернуть меню', onPressed: _toggle, icon: const Icon(Icons.menu_rounded)) : null,
         backgroundColor: paper,
         surfaceTintColor: Colors.transparent,
         title: const FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: HikariLogo(size: 22)),
@@ -147,9 +148,9 @@ class _WebsiteShellState extends ConsumerState<WebsiteShell> {
         if (wide) AnimatedContainer(
           duration: motion(context),
           curve: Curves.easeOutCubic,
-          width: _collapsed ? 76 : 210,
+          width: _collapsed ? 0 : 210,
           decoration: const BoxDecoration(border: Border(right: BorderSide(color: line))),
-          child: _navigation(collapsed: _collapsed),
+          child: _collapsed ? null : _navigation(collapsed: false),
         ),
         Expanded(child: widget.child),
       ]),
@@ -543,7 +544,7 @@ class WebsiteAbout extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
         Text('О коллекции', style: AppText.display(22, color: ink)),
         const SizedBox(height: 10),
-        Text('В каталоге представлены изображения, извлечённые из созданной для проекта дизайн-концепции. Сейчас это небольшие превью, а не файлы обоев высокого разрешения.', style: AppText.body(15, color: muted)),
+        Text('В разделе превью представлены небольшие изображения из дизайн-концепции. В разделе «Обои» — отдельная коллекция файлов для компьютера и телефона; это другие изображения.', style: AppText.body(15, color: muted)),
         const SizedBox(height: 22),
         Text('Использование', style: AppText.display(22, color: ink)),
         const SizedBox(height: 10),
@@ -604,7 +605,15 @@ class SavedWallpapers extends ConsumerWidget {
   const SavedWallpapers({super.key, required this.favorites});
   final Set<String> favorites;
   @override
-  Widget build(BuildContext context, WidgetRef ref) => ref.watch(catalogProvider).when(
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!favorites.any((id) => id.startsWith('wallpaper:'))) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+        Text('Обои', style: AppText.display(22, color: ink)),
+        const SizedBox(height: 14),
+        Text('Сохранённых обоев пока нет.', style: AppText.body(14, color: muted)),
+      ]);
+    }
+    return ref.watch(catalogProvider).when(
     loading: () => const CircularProgressIndicator(),
     error: (error, stack) => Text('Не удалось загрузить обои: $error'),
     data: (data) {
@@ -615,7 +624,8 @@ class SavedWallpapers extends ConsumerWidget {
         if (items.isEmpty) Text('Сохранённых обоев пока нет.', style: AppText.body(14, color: muted)) else WallpaperGrid(items: items, orientation: 'desktop'),
       ]);
     },
-  );
+    );
+  }
 }
 
 class WallpaperGrid extends ConsumerWidget {
@@ -713,7 +723,9 @@ class WallpaperDetail extends ConsumerWidget {
               ]),
               const SizedBox(height: 18), Text('Условия повторного и коммерческого использования пока не опубликованы.', style: AppText.body(12, color: muted)),
             ]);
-            if (!wide) return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[image, const SizedBox(height: 24), info]);
+            if (!wide) {
+              return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[image, const SizedBox(height: 24), info]);
+            }
             return Row(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[Expanded(flex: 6, child: image), const SizedBox(width: 32), Expanded(flex: 4, child: info)]);
           }),
         ]);

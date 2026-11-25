@@ -33,7 +33,10 @@ void main() {
     await tester.tap(find.byTooltip('Свернуть меню'));
     await tester.pumpAndSettle();
     expect(find.byTooltip('Развернуть меню'), findsOneWidget);
-    await tester.tap(find.byTooltip('Каталог превью'));
+    expect(find.byTooltip('Каталог превью'), findsNothing);
+    await tester.tap(find.byTooltip('Развернуть меню'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Каталог превью'));
     await tester.pumpAndSettle();
     expect(find.text('Каталог'), findsWidgets);
     await tester.tap(find.byKey(const ValueKey<String>('work-akane-no-sora')));
