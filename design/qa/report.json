@@ -10,9 +10,9 @@
     "clientHeight": 1286
   },
   "screenshot": {
-    "width": 1881,
+    "width": 1223,
     "height": 1286,
-    "bytes": 1478057
+    "bytes": 1445673
   },
   "desktopOverflowX": 0,
   "desktopOverflowY": 0,
@@ -20,17 +20,17 @@
   "mobileOverflowY": 0,
   "mobileScale": 0.319,
   "brightness": {
-    "mean": 200.2,
-    "stdDev": 74.2
+    "mean": 170.9,
+    "stdDev": 78
   },
   "reference": {
-    "mae": 62.3,
-    "changedPct": 51.1
+    "mae": 19.7,
+    "changedPct": 18.1
   },
   "interactionWorks": true,
   "searchWorks": true,
-  "clickDiffPct": 45.1,
-  "searchDiffPct": 15.5,
+  "clickDiffPct": 4,
+  "searchDiffPct": 19.8,
   "ariaTextLength": 2453,
   "ariaHasCatalog": true,
   "semanticTextCount": 83,
