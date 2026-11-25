@@ -17,7 +17,19 @@ void main() {
     }
   });
 
-  test('пиксельный макет главной доступен в бандле', () async {
-    await rootBundle.load('assets/design/hikari-light-concept.png');
+  test('графика собранного макета доступна в бандле', () async {
+    for (final path in <String>[
+      'assets/design/hero-clean.jpg',
+      'assets/design/logo-bird.png',
+      'assets/design/decor-blossom.png',
+      'assets/design/decor-mountains.png',
+      'assets/design/collection-1.jpg',
+      'assets/design/work-01.jpg',
+      'assets/design/work-16.jpg',
+      'assets/design/detail-fuji.jpg',
+      'assets/design/similar-1.jpg',
+    ]) {
+      await rootBundle.load(path);
+    }
   });
 }

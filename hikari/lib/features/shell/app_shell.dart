@@ -56,8 +56,8 @@ class AppShell extends StatelessWidget {
     final width = MediaQuery.sizeOf(context).width;
     final rail = width >= 900;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    // Главная — пиксельно точный макет 1:1: ни рейла, ни нижней навигации,
-    // ни дополнительного PaperBackground поверх выбранного PNG.
+    // Главная сама рисует референсный sidebar/topbar настоящими виджетами,
+    // поэтому стандартный рейл и нижняя навигация на ней скрыты.
     final exactHome = navigationShell.currentIndex == 0;
     final uiDark = dark && !exactHome;
 

@@ -73,12 +73,17 @@ flutter build web --release --base-href /InterfaceForge/
 Интерфейс стартует в светлой теме «васи»: тёмная ОС больше не делает его
 почти чёрным, а тёмную тему можно включить осознанно в настройках.
 
-Главная веб-страница (`#/home`) — **точное 1:1 воспроизведение выбранного
-макета** [`../design/hikari-light-concept.png`](../design/hikari-light-concept.png):
-тот же PNG скопирован в `assets/design/` и используется как фон, а поверх него
-расположены прозрачные интерактивные зоны (меню, поиск, hero, коллекции,
-16 карточек, избранное, правая панель). На главной намеренно скрыты обычный
-`NavigationRail` и нижняя навигация, чтобы не отступать от макета ни на пиксель.
+Главная веб-страница (`#/home`) — **1:1 реализация выбранного макета
+настоящими виджетами** [`../design/hikari-light-concept.png`](../design/hikari-light-concept.png).
+Целый скриншот как фон не используется: sidebar, поиск, hero, текст, кнопки,
+коллекции, фильтры, сетка из 16 работ и правая панель собраны из
+`Text`, `TextField`, `GridView`, `Image`, `PopupMenuButton`, `FilledButton`
+и других виджетов. В `assets/design/` лежат только вырезанные из референса
+графические элементы — hero, логотип, декор, 4 обложки, 16 миниатюр, большая
+картинка детали и похожие обои. Поиск, фильтры, избранное, выбор карточки,
+палитра, разрешения и акцент работают на главной. Стандартный `NavigationRail`
+и нижняя навигация скрыты только на главной.
+
 Остальные экраны Flutter используют светлую тему и сгенерированные изображения
 из `assets/wallpapers/generated-*.jpg`.
 
@@ -97,4 +102,4 @@ flutter build web --release --base-href /InterfaceForge/
 
 ## Ресурсы
 
-Шрифты Inter, Playfair Display, Caveat Brush, Yuji Syuku и Shippori Mincho распространяются по SIL Open Font License; тексты лицензий находятся в `assets/fonts/licenses/`. Hero и обложки коллекций в `assets/wallpapers/generated-*.jpg` сгенерированы ИИ по выбранному светлому макету [`../design/hikari-light-concept.png`](../design/hikari-light-concept.png); скрипт `tools/gen_assets.py` оставлен как легаси-генератор процедурной графики MVP и не должен перезаписывать новые изображения.
+Шрифты Inter, Playfair Display, Caveat Brush, Yuji Syuku и Shippori Mincho распространяются по SIL Open Font License; тексты лицензий находятся в `assets/fonts/licenses/`. Графика главной в `assets/design/` вырезана из выбранного макета [`../design/hikari-light-concept.png`](../design/hikari-light-concept.png) и очищена от запечённого текста/сердечек. Hero и обложки коллекций в `assets/wallpapers/generated-*.jpg` сгенерированы ИИ для остальных экранов; скрипт `tools/gen_assets.py` оставлен как легаси-генератор процедурной графики MVP и не должен перезаписывать новые изображения.
