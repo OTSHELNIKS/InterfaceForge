@@ -1,0 +1,22 @@
+{
+  "desktop": {
+    "width": 1223,
+    "height": 900
+  },
+  "mobile": {
+    "width": 390,
+    "height": 844,
+    "overflowX": 0
+  },
+  "routesChecked": [
+    "/home",
+    "/catalog?tag=Природа",
+    "/item/akane-no-sora (reload)",
+    "/collections",
+    "/about",
+    "/favorites"
+  ],
+  "errors": [],
+  "badResponses": [],
+  "requests": []
+}
