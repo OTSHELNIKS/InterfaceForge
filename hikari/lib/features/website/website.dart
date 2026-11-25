@@ -60,7 +60,7 @@ class _WebsiteShellState extends ConsumerState<WebsiteShell> {
           child: Row(children: <Widget>[
             if (!collapsed) Expanded(child: InkWell(
               onTap: () => _go('/home', drawer: drawer),
-              child: const HikariLogo(size: 25),
+              child: const FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: HikariLogo(size: 25)),
             )) else const Expanded(child: Text('光', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, color: red))),
             if (!drawer && !collapsed) IconButton(
               tooltip: 'Свернуть меню',
@@ -133,7 +133,7 @@ class _WebsiteShellState extends ConsumerState<WebsiteShell> {
       appBar: wide ? null : AppBar(
         backgroundColor: paper,
         surfaceTintColor: Colors.transparent,
-        title: const HikariLogo(size: 22),
+        title: const FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: HikariLogo(size: 22)),
         actions: <Widget>[
           IconButton(tooltip: 'Каталог', onPressed: () => context.go('/catalog'), icon: const Icon(Icons.search_rounded)),
           IconButton(tooltip: 'Избранное', onPressed: () => context.go('/favorites'), icon: const Icon(Icons.favorite_border_rounded)),
@@ -185,11 +185,11 @@ class WebsiteHome extends StatelessWidget {
   Widget build(BuildContext context) {
     final small = MediaQuery.sizeOf(context).width < 600;
     return PageFrame(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[
-      ClipRRect(borderRadius: BorderRadius.circular(18), child: SizedBox(
-        height: small ? 330 : 340,
-        child: Stack(fit: StackFit.expand, children: <Widget>[
-          Image.asset('assets/design/hero-clean.jpg', fit: BoxFit.cover),
-          const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: <Color>[Color(0xE51A1A21), Color(0x661A1A21), Color(0x111A1A21)]))),
+      ClipRRect(borderRadius: BorderRadius.circular(18), child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: small ? 330 : 340),
+        child: Stack(children: <Widget>[
+          Positioned.fill(child: Image.asset('assets/design/hero-clean.jpg', fit: BoxFit.cover)),
+          const Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: <Color>[Color(0xE51A1A21), Color(0x661A1A21), Color(0x111A1A21)])))),
           Padding(padding: EdgeInsets.all(small ? 24 : 44), child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
             Text('HIKARI · 光', style: AppText.label(12, color: Colors.white70)),
             const SizedBox(height: 14),
@@ -505,7 +505,9 @@ class WebsiteDetail extends ConsumerWidget {
             FavoriteButton(item: item, favorite: favorite),
           ]),
         ]);
-        if (!wide) return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[image, const SizedBox(height: 24), info]);
+        if (!wide) {
+          return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[image, const SizedBox(height: 24), info]);
+        }
         return Row(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
           Expanded(flex: 6, child: image), const SizedBox(width: 32), Expanded(flex: 4, child: info),
         ]);
