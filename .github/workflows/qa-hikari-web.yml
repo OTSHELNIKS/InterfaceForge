@@ -152,7 +152,7 @@ jobs:
 
             const initialText = await collectText(page);
             const initialAria = await ariaSnapshot(page);
-            const shot = await page.screenshot({ fullPage: true, type: 'png' });
+            const shot = await page.screenshot({ clip: { x: 0, y: 0, width: 1223, height: 1286 }, type: 'png' });
             fs.writeFileSync('/tmp/hikari-qa/screenshot.png', shot);
             const meta = await sharp(shot).metadata();
 
@@ -187,7 +187,7 @@ jobs:
             await page.waitForTimeout(800);
             const afterCard = await collectText(page);
             const afterCardAria = await ariaSnapshot(page);
-            const clickShot = await page.screenshot({ fullPage: true, type: 'png' });
+            const clickShot = await page.screenshot({ clip: { x: 0, y: 0, width: 1223, height: 1286 }, type: 'png' });
             const clickDiffPct = await diffPct(shot, clickShot);
             const interactionWorks = clickDiffPct > 0.5 ||
               (initialText.some((t) => t.includes('Фудзи')) && afterCard.some((t) => t.includes('Утро в Киото'))) ||
@@ -199,7 +199,7 @@ jobs:
             await page.waitForTimeout(800);
             const afterSearch = await collectText(page);
             const afterSearchAria = await ariaSnapshot(page);
-            const searchShot = await page.screenshot({ fullPage: true, type: 'png' });
+            const searchShot = await page.screenshot({ clip: { x: 0, y: 0, width: 1223, height: 1286 }, type: 'png' });
             const searchDiffPct = await diffPct(clickShot, searchShot);
             const searchWorks = searchDiffPct > 0.5 ||
               afterSearch.some((t) => t.includes('Весеннее отражение')) ||
@@ -217,7 +217,7 @@ jobs:
               scrollHeight: document.documentElement.scrollHeight,
               clientHeight: document.documentElement.clientHeight,
             }));
-            const mobileShot = await page.screenshot({ fullPage: true, type: 'png' });
+            const mobileShot = await page.screenshot({ clip: { x: 0, y: 0, width: 390, height: 844 }, type: 'png' });
 
             const report = {
               dom,
