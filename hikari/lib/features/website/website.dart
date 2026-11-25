@@ -65,7 +65,7 @@ class _WebsiteShellState extends ConsumerState<WebsiteShell> {
           width: 185,
           height: 260,
           child: IgnorePointer(child: ExcludeSemantics(child: Image.asset(
-            'assets/design/decor-blossom.png', fit: BoxFit.contain, alignment: Alignment.centerLeft,
+            'assets/design/decor-sakura-branch.png', fit: BoxFit.contain, alignment: Alignment.centerLeft,
           ))),
         ),
       SafeArea(child: Column(children: <Widget>[
@@ -161,7 +161,7 @@ class _WebsiteShellState extends ConsumerState<WebsiteShell> {
           child: _collapsed ? null : _navigation(collapsed: false),
         ),
         Expanded(child: Stack(fit: StackFit.expand, children: <Widget>[
-          const SitePaperDecoration(),
+          SitePaperDecoration(home: widget.location == '/home'),
           widget.child,
         ])),
       ]),
@@ -172,7 +172,8 @@ class _WebsiteShellState extends ConsumerState<WebsiteShell> {
 /// Орнамент является частью фона всех разделов и не перехватывает ввод.
 /// Исходная ветка и горы взяты из утверждённого макета без кадрирования.
 class SitePaperDecoration extends StatelessWidget {
-  const SitePaperDecoration({super.key});
+  const SitePaperDecoration({super.key, this.home = false});
+  final bool home;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(builder: (context, constraints) {
@@ -185,7 +186,7 @@ class SitePaperDecoration extends StatelessWidget {
           colors: <Color>[Color(0xFFF5F0E6), paper, Color(0xFFF6F1E8)]),
       ))),
       Positioned(
-        right: 0, top: mobile ? 8 : 24,
+        right: 0, top: home ? (mobile ? 390 : 360) : (mobile ? 8 : 24),
         width: branchWidth, height: branchWidth * 260 / 185,
         child: Opacity(
           opacity: mobile ? 0.20 : 0.25,
@@ -236,7 +237,7 @@ class SiteFooter extends StatelessWidget {
       padding: const EdgeInsets.only(top: 20),
       child: Row(children: <Widget>[
         Expanded(flex: 4, child: SizedBox(height: 210, child: IgnorePointer(child: ExcludeSemantics(
-          child: Image.asset('assets/design/decor-blossom.png', fit: BoxFit.contain, alignment: Alignment.centerLeft),
+          child: Image.asset('assets/design/decor-sakura-branch.png', fit: BoxFit.contain, alignment: Alignment.centerLeft),
         )))),
         const SizedBox(width: 16),
         Expanded(flex: 5, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
