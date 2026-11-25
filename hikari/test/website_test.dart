@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hikari/app/app.dart';
 import 'package:hikari/app/providers.dart';
+import 'package:hikari/data/repositories/catalog_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -13,8 +14,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final prefs = await SharedPreferences.getInstance();
+    final catalog = await const CatalogRepository().load();
     await tester.pumpWidget(ProviderScope(
-      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      overrides: [sharedPreferencesProvider.overrideWithValue(prefs), catalogProvider.overrideWith((ref) async => catalog)],
       child: const HikariApp(),
     ));
     await tester.pumpAndSettle();

@@ -471,10 +471,12 @@ class WebsiteDetail extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final matches = kDesignItems.where((i) => i.catalogId == id);
-    if (matches.isEmpty) return PageFrame(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-      sectionTitle('Работа не найдена'), const SizedBox(height: 16),
-      TextButton(onPressed: () => context.go('/catalog'), child: const Text('Вернуться в каталог')),
-    ]));
+    if (matches.isEmpty) {
+      return PageFrame(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+        sectionTitle('Работа не найдена'), const SizedBox(height: 16),
+        TextButton(onPressed: () => context.go('/catalog'), child: const Text('Вернуться в каталог')),
+      ]));
+    }
     final item = matches.first;
     final favorite = ref.watch(favoritesProvider).contains(item.catalogId);
     final imageWidth = <int>[173, 170, 172, 175][item.index % 4];
@@ -704,15 +706,21 @@ class WallpaperDetail extends ConsumerWidget {
     final portrait = params['format'] == 'phone';
     final from = params['from'];
     final returnTo = from != null && (from == '/favorites' || from == '/wallpapers' || from.startsWith('/wallpapers?')) ? from : '/wallpapers';
-    void selectFormat(String format) => context.go(Uri(path: '/wallpapers/$id', queryParameters: <String, String>{'format': format, if (from != null) 'from': from}).toString());
+    void selectFormat(String format) {
+      final next = <String, String>{'format': format};
+      if (from != null) { next['from'] = from; }
+      context.go(Uri(path: '/wallpapers/$id', queryParameters: next).toString());
+    }
     return PageFrame(child: ref.watch(catalogProvider).when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Text('Не удалось загрузить работу: $error'),
       data: (data) {
         final item = data.itemById(id);
-        if (item == null) return Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-          sectionTitle('Обои не найдены'), TextButton(onPressed: () => context.go('/wallpapers'), child: const Text('Вернуться в обои')),
-        ]);
+        if (item == null) {
+          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+            sectionTitle('Обои не найдены'), TextButton(onPressed: () => context.go('/wallpapers'), child: const Text('Вернуться в обои')),
+          ]);
+        }
         final saved = ref.watch(favoritesProvider).contains('wallpaper:${item.id}');
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
           TextButton.icon(onPressed: () => context.go(returnTo), icon: const Icon(Icons.arrow_back_rounded), label: const Text('Назад к списку')),
