@@ -183,15 +183,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   _mobileHero(),
                   const SizedBox(height: 28),
                   Row(key: _overviewKey, children: <Widget>[
-                    Text('Обзор', style: AppText.display(26, color: _ink)),
-                    const Spacer(),
-                    TextButton(
+                    Expanded(child: Text('Обзор', style: AppText.display(26, color: _ink))),
+                    Flexible(child: TextButton(
                       onPressed: () {
                         setState(() { _collection = null; _filter = 'Все'; _onlyFavorites = false; });
                         _scrollTo(560);
                       },
-                      child: Text('Смотреть все', style: AppText.body(13, color: _accent, weight: FontWeight.w600)),
-                    ),
+                      child: Text('Смотреть все', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.body(13, color: _accent, weight: FontWeight.w600)),
+                    )),
                   ]),
                   const SizedBox(height: 8),
                   SizedBox(
@@ -296,7 +295,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: SizedBox(
-        height: 300,
+        height: MediaQuery.sizeOf(context).width < 360 ? 370 : 300,
         child: Stack(fit: StackFit.expand, children: <Widget>[
           Image.asset('assets/design/hero-clean.jpg', fit: BoxFit.cover, alignment: Alignment.centerRight),
           const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(
@@ -332,6 +331,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           button: true,
           label: 'Открыть ${item.title}',
           child: InkWell(
+            key: ValueKey<String>('mobile-work-${item.catalogId}'),
             onTap: () => _showMobileDetail(item.index),
             child: ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.asset(item.image, fit: BoxFit.cover)),
           ),

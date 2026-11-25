@@ -39,7 +39,7 @@ void main() {
     await tester.ensureVisible(find.text('Весеннее отражение'));
     await tester.pumpAndSettle();
     expect(find.text('Утро в Киото'), findsNothing);
-    await tester.tap(find.bySemanticsLabel('Открыть Весеннее отражение').first);
+    await tester.tap(find.byKey(const ValueKey<String>('mobile-work-somei-yoshino')));
     await tester.pumpAndSettle();
     expect(find.text('Доступные разрешения'), findsOneWidget);
     await tester.ensureVisible(find.text('Mobile (1080 × 1920)'));
