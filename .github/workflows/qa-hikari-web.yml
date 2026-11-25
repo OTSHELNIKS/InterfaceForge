@@ -1,0 +1,232 @@
+name: QA Hikari Web Screenshot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hikari-qa
+  cancel-in-progress: true
+
+jobs:
+  qa:
+    name: Render and audit Flutter Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /tmp/hikari-qa/browsers
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter 3.50.1
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.50.1
+          cache: true
+
+      - name: Build web release
+        working-directory: hikari
+        run: |
+          flutter pub get
+          flutter build web --release --base-href /InterfaceForge/
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install headless browser and image tools
+        run: |
+          mkdir -p /tmp/hikari-qa
+          npm install --prefix /tmp/hikari-qa --no-audit --no-fund playwright sharp
+          /tmp/hikari-qa/node_modules/.bin/playwright install --with-deps chromium
+
+      - name: Render, interact and emit QA report
+        run: |
+          cat > /tmp/hikari-qa/shot.cjs <<'NODE'
+          const { chromium } = require('/tmp/hikari-qa/node_modules/playwright');
+          const sharp = require('/tmp/hikari-qa/node_modules/sharp');
+          const fs = require('node:fs');
+
+          async function collectText(page) {
+            return page.evaluate(() => {
+              const out = [];
+              const seen = new Set();
+              function walk(root) {
+                try {
+                  const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+                  let n;
+                  while ((n = tw.nextNode())) {
+                    const t = (n.textContent || '').trim();
+                    if (t && !seen.has(t)) {
+                      seen.add(t);
+                      out.push(t);
+                    }
+                  }
+                  for (const el of root.querySelectorAll('*')) {
+                    if (el.shadowRoot) walk(el.shadowRoot);
+                    if (el.tagName === 'INPUT' && el.value) {
+                      const v = 'INPUT:' + el.value;
+                      if (!seen.has(v)) { seen.add(v); out.push(v); }
+                    }
+                  }
+                } catch (_) {}
+              }
+              walk(document);
+              return out;
+            });
+          }
+
+          (async () => {
+            const consoleErrors = [];
+            const pageErrors = [];
+            const badResponses = [];
+            const failedRequests = [];
+
+            const browser = await chromium.launch({
+              headless: true,
+              args: [
+                '--no-sandbox',
+                '--disable-dev-shm-usage',
+                '--use-gl=angle',
+                '--use-angle=swiftshader',
+                '--enable-unsafe-swiftshader',
+                '--ignore-gpu-blocklist',
+              ],
+            });
+            const page = await browser.newPage({ viewport: { width: 1223, height: 1286 }, deviceScaleFactor: 1 });
+            page.on('console', (msg) => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
+            page.on('pageerror', (err) => pageErrors.push(err.message));
+            page.on('response', (res) => { if (res.status() >= 400) badResponses.push({ url: res.url(), status: res.status() }); });
+            page.on('requestfailed', (req) => failedRequests.push({ url: req.url(), error: req.failure()?.errorText || 'unknown' }));
+
+            await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle', timeout: 90000 });
+            await page.waitForTimeout(5000);
+
+            const dom = await page.evaluate(() => ({
+              title: document.title,
+              url: location.href,
+              canvasCount: document.querySelectorAll('canvas').length,
+              glassPane: !!document.querySelector('flt-glass-pane'),
+              scrollWidth: document.documentElement.scrollWidth,
+              clientWidth: document.documentElement.clientWidth,
+              scrollHeight: document.documentElement.scrollHeight,
+              clientHeight: document.documentElement.clientHeight,
+            }));
+
+            const initialText = await collectText(page);
+            const shot = await page.screenshot({ fullPage: true, type: 'png' });
+            fs.writeFileSync('/tmp/hikari-qa/screenshot.png', shot);
+            const meta = await sharp(shot).metadata();
+
+            // Яркость/контраст: пустая или чёрная страница сразу была бы видна.
+            const small = await sharp(shot).resize(306, 322, { fit: 'fill' }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+            let sum = 0;
+            let sum2 = 0;
+            const pixels = small.data.length / small.info.channels;
+            for (let i = 0; i < small.data.length; i += small.info.channels) {
+              const v = (small.data[i] + small.data[i + 1] + small.data[i + 2]) / 3;
+              sum += v;
+              sum2 += v * v;
+            }
+            const mean = sum / pixels;
+            const stdDev = Math.sqrt(Math.max(0, sum2 / pixels - mean * mean));
+
+            // Грубая близость к выбранному референсу (шрифты и антиалиасинг дают разницу).
+            const ref = await sharp('design/hikari-light-concept.png').resize(306, 322, { fit: 'fill' }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+            let diffSum = 0;
+            let changed = 0;
+            const count = Math.min(ref.data.length, small.data.length);
+            for (let i = 0; i < count; i += 3) {
+              const d = (Math.abs(ref.data[i] - small.data[i]) + Math.abs(ref.data[i + 1] - small.data[i + 1]) + Math.abs(ref.data[i + 2] - small.data[i + 2])) / 3;
+              diffSum += d;
+              if (d > 30) changed++;
+            }
+            const mae = diffSum / (count / 3);
+            const changedPct = (changed / (count / 3)) * 100;
+
+            // Клик по первой карточке должен обновить правую панель.
+            await page.mouse.click(300, 700);
+            await page.waitForTimeout(800);
+            const afterCard = await collectText(page);
+            const interactionWorks = initialText.some((t) => t.includes('Фудзи')) && afterCard.some((t) => t.includes('Утро в Киото'));
+
+            // Поиск должен фильтровать сетку.
+            await page.mouse.click(300, 30);
+            await page.keyboard.type('сакура');
+            await page.waitForTimeout(800);
+            const afterSearch = await collectText(page);
+            await page.keyboard.press('Control+A');
+            await page.keyboard.press('Backspace');
+            await page.waitForTimeout(500);
+
+            // Мобильная ширина: проверяем горизонтальный overflow.
+            await page.setViewportSize({ width: 390, height: 844 });
+            await page.waitForTimeout(800);
+            const mobile = await page.evaluate(() => ({
+              scrollWidth: document.documentElement.scrollWidth,
+              clientWidth: document.documentElement.clientWidth,
+              scrollHeight: document.documentElement.scrollHeight,
+              clientHeight: document.documentElement.clientHeight,
+            }));
+
+            const report = {
+              dom,
+              screenshot: { width: meta.width, height: meta.height, bytes: shot.length },
+              desktopOverflowX: dom.scrollWidth - dom.clientWidth,
+              desktopOverflowY: dom.scrollHeight - dom.clientHeight,
+              mobileOverflowX: mobile.scrollWidth - mobile.clientWidth,
+              mobileOverflowY: mobile.scrollHeight - mobile.clientHeight,
+              brightness: { mean: Number(mean.toFixed(1)), stdDev: Number(stdDev.toFixed(1)) },
+              reference: { mae: Number(mae.toFixed(1)), changedPct: Number(changedPct.toFixed(1)) },
+              interactionWorks,
+              searchSample: afterSearch.filter((t) => t.length < 60).slice(0, 25),
+              textSample: initialText.filter((t) => t.length < 60).slice(0, 25),
+              consoleErrors: consoleErrors.slice(0, 20),
+              pageErrors: pageErrors.slice(0, 20),
+              badResponses: badResponses.slice(0, 20),
+              failedRequests: failedRequests.slice(0, 20),
+            };
+
+            const smallJpeg = await sharp(shot).resize(600, 630, { fit: 'fill' }).jpeg({ quality: 58 }).toBuffer();
+            const b64 = smallJpeg.toString('base64');
+            console.log('QA_REPORT:' + JSON.stringify(report));
+            console.log('QA_MARKER:BEGIN_SHOT');
+            for (let i = 0; i < b64.length; i += 160) console.log('QA_SHOT:' + b64.slice(i, i + 160));
+            console.log('QA_MARKER:END_SHOT');
+            console.log('QA_SHOT_BYTES:' + smallJpeg.length);
+
+            await browser.close();
+          })().catch((err) => {
+            console.error('QA_FATAL:' + (err && err.stack ? err.stack : String(err)));
+            process.exit(1);
+          });
+          NODE
+
+          node dev-preview/serve-flutter-web.cjs hikari/build/web > /tmp/hikari-qa/server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          READY=0
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:4173/ > /dev/null; then READY=1; break; fi
+            sleep 1
+          done
+          if [ "$READY" != "1" ]; then
+            echo 'QA_FATAL: static server did not start'
+            cat /tmp/hikari-qa/server.log
+            exit 1
+          fi
+          node /tmp/hikari-qa/shot.cjs
+
+      - name: Upload full-size screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hikari-qa-screenshot
+          path: /tmp/hikari-qa/screenshot.png
+          if-no-files-found: warn
+          retention-days: 1
