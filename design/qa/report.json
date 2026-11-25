@@ -12,29 +12,38 @@
   "screenshot": {
     "width": 1223,
     "height": 1286,
-    "bytes": 1426100
+    "bytes": 1447748
   },
   "desktopOverflowX": 0,
   "desktopOverflowY": 0,
   "mobileOverflowX": 0,
   "mobileOverflowY": 0,
+  "mobileScale": 0.319,
   "brightness": {
-    "mean": 170,
+    "mean": 171.3,
     "stdDev": 78.4
   },
   "reference": {
-    "mae": 27.5,
-    "changedPct": 26.7
+    "mae": 19.8,
+    "changedPct": 18.1
   },
-  "interactionWorks": false,
+  "interactionWorks": true,
+  "searchWorks": true,
+  "clickDiffPct": 4,
+  "searchDiffPct": 19.8,
+  "ariaInitial": "- button \"Enable accessibility\"",
+  "ariaAfterCard": "- button \"Enable accessibility\"",
+  "ariaAfterSearch": "- button \"Enable accessibility\"\n- textbox \"Поиск обоев, тем, тегов...\": сакура\n- button \"Submit\"",
   "searchSample": [
     "Hikari",
     "flutter typography measurement",
+    "Enable accessibility",
     "INPUT:сакура"
   ],
   "textSample": [
     "Hikari",
-    "flutter typography measurement"
+    "flutter typography measurement",
+    "Enable accessibility"
   ],
   "consoleErrors": [],
   "pageErrors": [],
