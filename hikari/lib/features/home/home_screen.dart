@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -267,7 +266,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Column(
             children: <Widget>[
               _infoItem(Icons.info_outline_rounded, 'О нас', () => _showInfoDialog('О нас', 'Hikari · 光 — каталог японских обоев и тем интерфейса.')),
-              _infoItem(Icons.article_outline_rounded, 'Блог', () => _showInfoDialog('Блог', 'Заметки о японской эстетике, цвете и цифровых обоях.')),
+              _infoItem(Icons.description, 'Блог', () => _showInfoDialog('Блог', 'Заметки о японской эстетике, цвете и цифровых обоях.')),
               _infoItem(Icons.help_outline_rounded, 'Помощь', () => _showInfoDialog('Помощь', 'Выберите работу, посмотрите палитру и разрешения, затем примените обои.')),
             ],
           ),
