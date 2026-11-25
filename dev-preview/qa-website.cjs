@@ -2,6 +2,7 @@ const { chromium } = require('/tmp/hikari-qa/node_modules/playwright');
 const sharp = require('/tmp/hikari-qa/node_modules/sharp');
 const fs = require('node:fs');
 const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
 
 (async () => {
   const errors = [], badResponses = [], requests = [];
@@ -37,6 +38,23 @@ const assert = require('node:assert/strict');
   await page.waitForTimeout(1400);
   assert((await aria()).includes('Утро в Киото'), 'detail not preserved on reload');
   await shot('website-desktop-detail.jpg', 1223, 900);
+  await route('/wallpapers/akane-no-sora?format=desktop');
+  tree = await aria();
+  assert(tree.includes('Akane no Sora') && tree.includes('Скачать обои'), 'wallpaper detail missing');
+  const [download] = await Promise.all([
+    page.waitForEvent('download', { timeout: 15000 }),
+    page.getByRole('button', { name: 'Скачать обои' }).click(),
+  ]);
+  const downloadPath = await download.path();
+  const actualHash = crypto.createHash('sha256').update(fs.readFileSync(downloadPath)).digest('hex');
+  const expectedHash = crypto.createHash('sha256').update(fs.readFileSync('hikari/assets/wallpapers/akane-no-sora_l.jpg')).digest('hex');
+  assert.equal(actualHash, expectedHash, 'downloaded file differs from selected desktop image');
+  const downloadSize = await sharp(downloadPath).metadata();
+  assert.equal(downloadSize.width, 1920);
+  assert.equal(downloadSize.height, 1080);
+  await route('/wallpapers/akane-no-sora?format=phone');
+  assert((await aria()).includes('1080 × 1920'), 'phone format missing');
+  await shot('website-desktop-wallpaper.jpg', 1223, 900);
   await route('/collections');
   tree = await aria();
   assert(tree.includes('Сезоны Японии') && tree.includes('Коллекции'), 'collections missing');
@@ -56,7 +74,7 @@ const assert = require('node:assert/strict');
   assert.deepEqual(errors, [], 'browser errors');
   assert.deepEqual(badResponses, [], 'bad HTTP responses');
   assert.deepEqual(requests, [], 'failed requests');
-  const report = { desktop: { width: 1223, height: 900 }, mobile: { width: 390, height: 844, overflowX: overflow }, routesChecked: ['/home','/catalog?tag=Природа','/item/akane-no-sora (reload)','/collections','/about','/favorites'], errors, badResponses, requests };
+  const report = { desktop: { width: 1223, height: 900 }, mobile: { width: 390, height: 844, overflowX: overflow }, routesChecked: ['/home','/catalog?tag=Природа','/item/akane-no-sora (reload)','/wallpapers/akane-no-sora (desktop and phone)','/collections','/about','/favorites'], downloadChecked: { width: downloadSize.width, height: downloadSize.height, sha256Matches: true }, errors, badResponses, requests };
   fs.writeFileSync('design/qa/website-report.json', JSON.stringify(report, null, 2));
   console.log('QA_REPORT ' + JSON.stringify(report));
   await browser.close();

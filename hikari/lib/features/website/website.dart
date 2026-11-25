@@ -7,6 +7,7 @@ import 'package:hikari/app/providers.dart';
 import 'package:hikari/core/theme/app_text.dart';
 import 'package:hikari/core/widgets/hikari_logo.dart';
 import 'package:hikari/features/home/design_data.dart';
+import 'package:hikari/data/models/hikari_item.dart';
 import 'package:hikari/features/website/download.dart';
 
 const paper = Color(0xFFF2EDE3);
@@ -21,7 +22,8 @@ Duration motion(BuildContext context) => MediaQuery.disableAnimationsOf(context)
 
 const _nav = <(String, String, IconData)>[
   ('/home', 'Главная', Icons.home_outlined),
-  ('/catalog', 'Каталог', Icons.grid_view_rounded),
+  ('/catalog', 'Каталог превью', Icons.grid_view_rounded),
+  ('/wallpapers', 'Обои', Icons.wallpaper_rounded),
   ('/collections', 'Коллекции', Icons.auto_awesome_outlined),
   ('/favorites', 'Избранное', Icons.favorite_border_rounded),
   ('/about', 'О проекте', Icons.info_outline_rounded),
@@ -44,7 +46,8 @@ class _WebsiteShellState extends ConsumerState<WebsiteShell> {
   }
 
   bool _active(String path) => widget.location == path ||
-      (path == '/catalog' && widget.location.startsWith('/item/'));
+      (path == '/catalog' && widget.location.startsWith('/item/')) ||
+      (path == '/wallpapers' && widget.location.startsWith('/wallpapers/'));
 
   void _go(String path, {bool drawer = false}) {
     if (drawer) Navigator.of(context).pop();
@@ -201,6 +204,8 @@ class WebsiteHome extends StatelessWidget {
           ])),
         ]),
       )),
+      const SizedBox(height: 22),
+      Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(12)), child: Wrap(spacing: 14, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: <Widget>[Text('Ищете готовые файлы обоев для компьютера или телефона?', style: AppText.body(14, color: ink)), TextButton(onPressed: () => context.go('/wallpapers'), child: const Text('Смотреть обои →'))])),
       const SizedBox(height: 38),
       Row(children: <Widget>[
         Expanded(child: sectionTitle('Коллекции', eyebrow: 'Откройте для себя')),
@@ -210,7 +215,7 @@ class WebsiteHome extends StatelessWidget {
       const CollectionGrid(),
       const SizedBox(height: 42),
       Row(children: <Widget>[
-        Expanded(child: sectionTitle('Избранные работы', eyebrow: 'Каталог')),
+        Expanded(child: sectionTitle('Превью концепции', eyebrow: 'Каталог')),
         TextButton(onPressed: () => context.go('/catalog'), child: const Text('Весь каталог →')),
       ]),
       const SizedBox(height: 18),
@@ -227,7 +232,7 @@ class _Notice extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(color: const Color(0xFFF8EDE4), borderRadius: BorderRadius.circular(12)),
-    child: Text('Сейчас доступны небольшие изображения из дизайн-концепции. Полноразмерные обои для этих работ ещё не подготовлены.', style: AppText.body(13, color: muted)),
+    child: Text('Эти работы — небольшие превью из дизайн-концепции. Полноразмерные обои находятся в отдельном разделе «Обои». ', style: AppText.body(13, color: muted)),
   );
 }
 
@@ -369,6 +374,12 @@ class _WebsiteCatalogState extends ConsumerState<WebsiteCatalog> {
         ]),
         const SizedBox(height: 16),
       ] else const SizedBox(height: 18),
+      if (widget.favoritesOnly) ...<Widget>[
+        SavedWallpapers(favorites: favorites),
+        const SizedBox(height: 18),
+        Text('Превью концепции', style: AppText.display(22, color: ink)),
+        const SizedBox(height: 14),
+      ],
       if (items.isEmpty) Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16)),
@@ -546,4 +557,167 @@ class WebsiteAbout extends StatelessWidget {
       ]),
     ),
   ]));
+}
+
+/// Отдельный каталог оригинальных файлов, не связанных с превью концепции.
+class WallpaperCatalog extends ConsumerStatefulWidget {
+  const WallpaperCatalog({super.key});
+  @override
+  ConsumerState<WallpaperCatalog> createState() => _WallpaperCatalogState();
+}
+class _WallpaperCatalogState extends ConsumerState<WallpaperCatalog> {
+  String query = '';
+  String orientation = 'desktop';
+  @override
+  Widget build(BuildContext context) {
+    final catalog = ref.watch(catalogProvider);
+    return PageFrame(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[
+      sectionTitle('Обои', eyebrow: 'Hikari · 光', description: 'Настоящие файлы для компьютера и телефона. Изображения отличаются от превью дизайн-концепции.'),
+      const SizedBox(height: 22),
+      TextField(onChanged: (value) => setState(() => query = value.trim().toLowerCase()), decoration: InputDecoration(
+        labelText: 'Поиск обоев', prefixIcon: const Icon(Icons.search_rounded), filled: true, fillColor: card,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      )),
+      const SizedBox(height: 14),
+      Wrap(spacing: 8, runSpacing: 8, children: <Widget>[
+        ChoiceChip(label: const Text('Для компьютера'), selected: orientation == 'desktop', onSelected: (_) => setState(() => orientation = 'desktop')),
+        ChoiceChip(label: const Text('Для телефона'), selected: orientation == 'phone', onSelected: (_) => setState(() => orientation = 'phone')),
+      ]),
+      const SizedBox(height: 20),
+      catalog.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Text('Не удалось загрузить каталог: $error', style: AppText.body(14, color: muted)),
+        data: (data) {
+          final items = data.items.where((item) => query.isEmpty || item.title.toLowerCase().contains(query) || item.description.toLowerCase().contains(query) || item.tags.any((tag) => tag.toLowerCase().contains(query))).toList();
+          if (items.isEmpty) return Text('Ничего не найдено. Попробуйте другой запрос.', style: AppText.body(14, color: muted));
+          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+            Text('${items.length} ${workCount(items.length)}', style: AppText.body(13, color: muted)),
+            const SizedBox(height: 14), WallpaperGrid(items: items, orientation: orientation),
+          ]);
+        },
+      ),
+    ]));
+  }
+}
+
+class SavedWallpapers extends ConsumerWidget {
+  const SavedWallpapers({super.key, required this.favorites});
+  final Set<String> favorites;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => ref.watch(catalogProvider).when(
+    loading: () => const CircularProgressIndicator(),
+    error: (error, stack) => Text('Не удалось загрузить обои: $error'),
+    data: (data) {
+      final items = data.items.where((item) => favorites.contains('wallpaper:${item.id}')).toList();
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+        Text('Обои', style: AppText.display(22, color: ink)),
+        const SizedBox(height: 14),
+        if (items.isEmpty) Text('Сохранённых обоев пока нет.', style: AppText.body(14, color: muted)) else WallpaperGrid(items: items, orientation: 'desktop'),
+      ]);
+    },
+  );
+}
+
+class WallpaperGrid extends ConsumerWidget {
+  const WallpaperGrid({super.key, required this.items, required this.orientation});
+  final List<HikariItem> items;
+  final String orientation;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => LayoutBuilder(builder: (context, c) {
+    final columns = c.maxWidth >= 850 ? 4 : c.maxWidth >= 580 ? 3 : c.maxWidth >= 310 ? 2 : 1;
+    final width = (c.maxWidth - (columns - 1) * 14) / columns;
+    return GridView.builder(
+      shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), itemCount: items.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: columns, crossAxisSpacing: 14, mainAxisSpacing: 20, mainAxisExtent: width * .68 + 60),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        final saved = ref.watch(favoritesProvider).contains('wallpaper:${item.id}');
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+          Expanded(child: Stack(fit: StackFit.expand, children: <Widget>[
+            Material(color: card, borderRadius: BorderRadius.circular(12), clipBehavior: Clip.antiAlias,
+              child: InkWell(key: ValueKey<String>('wallpaper-${item.id}'),
+                onTap: () => context.go('/wallpapers/${item.id}?format=$orientation'),
+                child: Semantics(label: 'Открыть обои ${item.title}', button: true,
+                  child: Ink.image(image: AssetImage(orientation == 'phone' ? item.asset : item.assetLandscape), fit: BoxFit.cover)),
+              ),
+            ),
+            Positioned(top: 4, right: 4, child: IconButton.filled(
+              tooltip: saved ? 'Удалить обои из избранного' : 'Добавить обои в избранное',
+              onPressed: () => ref.read(favoritesProvider.notifier).toggle('wallpaper:${item.id}'),
+              style: IconButton.styleFrom(backgroundColor: saved ? red : const Color(0xB0231C18), foregroundColor: Colors.white),
+              icon: AnimatedSwitcher(duration: motion(context), child: Icon(saved ? Icons.favorite_rounded : Icons.favorite_border_rounded, key: ValueKey<bool>(saved), size: 20)),
+            )),
+          ])),
+          const SizedBox(height: 8),
+          Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.body(14, color: ink, weight: FontWeight.w600)),
+          Text(orientation == 'phone' ? '1080 × 1920' : '1920 × 1080', style: AppText.body(11, color: muted)),
+        ]);
+      },
+    );
+  });
+}
+
+class WallpaperDetail extends ConsumerWidget {
+  const WallpaperDetail({super.key, required this.id});
+  final String id;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final portrait = GoRouterState.of(context).uri.queryParameters['format'] == 'phone';
+    return PageFrame(child: ref.watch(catalogProvider).when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Text('Не удалось загрузить работу: $error'),
+      data: (data) {
+        final item = data.itemById(id);
+        if (item == null) return Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+          sectionTitle('Обои не найдены'), TextButton(onPressed: () => context.go('/wallpapers'), child: const Text('Вернуться в обои')),
+        ]);
+        final saved = ref.watch(favoritesProvider).contains('wallpaper:${item.id}');
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+          TextButton.icon(onPressed: () => context.go('/wallpapers'), icon: const Icon(Icons.arrow_back_rounded), label: const Text('Все обои')),
+          const SizedBox(height: 14),
+          LayoutBuilder(builder: (context, constraints) {
+            final wide = constraints.maxWidth >= 760;
+            final image = ClipRRect(borderRadius: BorderRadius.circular(16), child: Container(
+              height: portrait ? 500 : 320, color: const Color(0xFFE7E0D6),
+              child: Center(child: Image.asset(portrait ? item.asset : item.assetLandscape, fit: BoxFit.contain)),
+            ));
+            final info = Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+              Text('ОБОИ · HIKARI', style: AppText.label(10, color: red)),
+              const SizedBox(height: 12), Text(item.title, style: AppText.display(32, color: ink, height: 1.15)),
+              const SizedBox(height: 12), Text(item.description, style: AppText.body(15, color: muted)),
+              const SizedBox(height: 18), Text('Формат', style: AppText.display(19, color: ink)),
+              const SizedBox(height: 10),
+              Wrap(spacing: 8, runSpacing: 8, children: <Widget>[
+                ChoiceChip(label: const Text('Компьютер · 1920 × 1080'), selected: !portrait, onSelected: (_) => context.go('/wallpapers/${item.id}?format=desktop')),
+                ChoiceChip(label: const Text('Телефон · 1080 × 1920'), selected: portrait, onSelected: (_) => context.go('/wallpapers/${item.id}?format=phone')),
+              ]),
+              const SizedBox(height: 12),
+              Text('Выберите формат: превью и скачиваемый файл переключаются вместе.', style: AppText.body(13, color: muted)),
+              const SizedBox(height: 18),
+              Wrap(spacing: 10, runSpacing: 10, children: <Widget>[
+                FilledButton.icon(
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final ok = await downloadPreview(portrait ? item.asset : item.assetLandscape, 'hikari-${item.id}-${portrait ? 'phone' : 'desktop'}.jpg');
+                    messenger.showSnackBar(SnackBar(content: Text(ok ? 'Скачивание началось' : 'Скачивание доступно в веб-версии')));
+                  },
+                  style: FilledButton.styleFrom(backgroundColor: red, foregroundColor: Colors.white, minimumSize: const Size(0, 48)),
+                  icon: const Icon(Icons.download_rounded), label: const Text('Скачать обои'),
+                ),
+                IconButton.filled(
+                  tooltip: saved ? 'Удалить обои из избранного' : 'Добавить обои в избранное',
+                  onPressed: () => ref.read(favoritesProvider.notifier).toggle('wallpaper:${item.id}'),
+                  style: IconButton.styleFrom(backgroundColor: saved ? red : muted, foregroundColor: Colors.white),
+                  icon: AnimatedSwitcher(duration: motion(context), child: Icon(saved ? Icons.favorite_rounded : Icons.favorite_border_rounded, key: ValueKey<bool>(saved))),
+                ),
+              ]),
+              const SizedBox(height: 18), Text('Условия повторного и коммерческого использования пока не опубликованы.', style: AppText.body(12, color: muted)),
+            ]);
+            if (!wide) return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[image, const SizedBox(height: 24), info]);
+            return Row(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[Expanded(flex: 6, child: image), const SizedBox(width: 32), Expanded(flex: 4, child: info)]);
+          }),
+        ]);
+      },
+    ));
+  }
 }

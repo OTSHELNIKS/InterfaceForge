@@ -11,6 +11,8 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
       routes: <RouteBase>[
         GoRoute(path: '/home', builder: (context, state) => const WebsiteHome()),
         GoRoute(path: '/catalog', builder: (context, state) => WebsiteCatalog(uri: state.uri)),
+        GoRoute(path: '/wallpapers', builder: (context, state) => const WallpaperCatalog()),
+        GoRoute(path: '/wallpapers/:id', builder: (context, state) => WallpaperDetail(id: state.pathParameters['id']!)),
         GoRoute(path: '/collections', builder: (context, state) => const WebsiteCollections()),
         GoRoute(path: '/favorites', builder: (context, state) => const WebsiteCatalog(favoritesOnly: true)),
         GoRoute(path: '/item/:id', builder: (context, state) => WebsiteDetail(id: state.pathParameters['id']!)),

@@ -33,13 +33,31 @@ void main() {
     await tester.tap(find.byTooltip('Свернуть меню'));
     await tester.pumpAndSettle();
     expect(find.byTooltip('Развернуть меню'), findsOneWidget);
-    await tester.tap(find.byTooltip('Каталог'));
+    await tester.tap(find.byTooltip('Каталог превью'));
     await tester.pumpAndSettle();
     expect(find.text('Каталог'), findsWidgets);
     await tester.tap(find.byKey(const ValueKey<String>('work-akane-no-sora')));
     await tester.pumpAndSettle();
     expect(find.text('Скачать превью'), findsOneWidget);
     expect(find.text('Превью JPEG · 173 × 99 пикселей'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('wallpaper format and favorites reflect the chosen original', (tester) async {
+    await launch(tester, const Size(1223, 844));
+    await tester.tap(find.text('Обои').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey<String>('wallpaper-akane-no-sora')));
+    await tester.pumpAndSettle();
+    expect(find.text('Скачать обои'), findsOneWidget);
+    await tester.tap(find.text('Телефон · 1080 × 1920'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Телефон · 1080 × 1920')).selected, isTrue);
+    await tester.tap(find.byTooltip('Добавить обои в избранное'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Избранное').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Akane no Sora'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
