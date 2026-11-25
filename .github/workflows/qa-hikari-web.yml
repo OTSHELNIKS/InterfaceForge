@@ -2,6 +2,11 @@ name: QA Hikari Web Screenshot
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - arena/45285b5c-interfaceforge
+    paths:
+      - '.github/workflows/qa-hikari-web.yml'
 
 permissions:
   contents: read
