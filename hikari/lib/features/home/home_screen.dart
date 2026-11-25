@@ -61,6 +61,9 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final ScrollController _scroll = ScrollController();
   final TextEditingController _search = TextEditingController();
+  final GlobalKey _overviewKey = GlobalKey();
+  final GlobalKey _catalogKey = GlobalKey();
+  bool _isMobileLayout = false;
 
   double _scale = 1;
   int _selectedIndex = 3;
@@ -92,6 +95,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       backgroundColor: _paper,
       body: LayoutBuilder(
         builder: (context, constraints) {
+          _isMobileLayout = constraints.maxWidth < 900;
+          if (_isMobileLayout) return _mobileHome(visible, favorites);
           final width = constraints.maxWidth < _designWidth
               ? constraints.maxWidth
               : _designWidth;
@@ -119,6 +124,312 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           );
         },
       ),
+    );
+  }
+
+  // На узких экранах контент перестраивается, а не уменьшается целиком.
+  Widget _mobileHome(List<DesignItem> visible, Set<String> favorites) {
+    return SingleChildScrollView(
+      controller: _scroll,
+      primary: false,
+      child: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 36),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Row(children: <Widget>[
+                    HikariLogo(size: 25, accent: _accent),
+                    const Spacer(),
+                    IconButton(
+                      tooltip: _onlyFavorites ? 'Показать все обои' : 'Избранное',
+                      onPressed: () {
+                        setState(() {
+                          _onlyFavorites = !_onlyFavorites;
+                          _collection = null;
+                          _filter = 'Все';
+                        });
+                        _scrollTo(560);
+                      },
+                      icon: Icon(_onlyFavorites ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: _accent),
+                    ),
+                    PopupMenuButton<String>(
+                      tooltip: 'Меню',
+                      icon: const Icon(Icons.menu_rounded, color: _ink),
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'themes': _showThemeDialog(); break;
+                          case 'accent': _showAccentMenu(); break;
+                          case 'authors': _showAuthorsDialog(); break;
+                          case 'tags': _showTagsDialog(); break;
+                          case 'theme': _toggleTheme(); break;
+                        }
+                      },
+                      itemBuilder: (context) => const <PopupMenuEntry<String>>[
+                        PopupMenuItem(value: 'themes', child: Text('Темы интерфейса')),
+                        PopupMenuItem(value: 'accent', child: Text('Акцент')),
+                        PopupMenuItem(value: 'authors', child: Text('Авторы')),
+                        PopupMenuItem(value: 'tags', child: Text('Теги')),
+                        PopupMenuItem(value: 'theme', child: Text('Светлая / тёмная тема')),
+                      ],
+                    ),
+                  ]),
+                  const SizedBox(height: 12),
+                  _mobileSearch(),
+                  const SizedBox(height: 18),
+                  _mobileHero(),
+                  const SizedBox(height: 28),
+                  Row(key: _overviewKey, children: <Widget>[
+                    Text('Обзор', style: AppText.display(26, color: _ink)),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        setState(() { _collection = null; _filter = 'Все'; _onlyFavorites = false; });
+                        _scrollTo(560);
+                      },
+                      child: Text('Смотреть все', style: AppText.body(13, color: _accent, weight: FontWeight.w600)),
+                    ),
+                  ]),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 162,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: kDesignCollections.length,
+                      separatorBuilder: (context, index) => const SizedBox(width: 12),
+                      itemBuilder: (context, index) => SizedBox(
+                        width: 205,
+                        child: _collectionCard(kDesignCollections[index]),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  Row(key: _catalogKey, children: <Widget>[
+                    Expanded(child: Text(_onlyFavorites ? 'Избранное' : 'Каталог', style: AppText.display(26, color: _ink))),
+                    PopupMenuButton<CatalogSort>(
+                      tooltip: 'Сортировка',
+                      onSelected: (value) => setState(() => _sort = value),
+                      itemBuilder: (context) => <PopupMenuEntry<CatalogSort>>[
+                        for (final sort in CatalogSort.values)
+                          PopupMenuItem(value: sort, child: Text(_sortLabel(sort))),
+                      ],
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
+                          Text(_sortLabel(_sort), style: AppText.body(12, color: _muted)),
+                          const Icon(Icons.keyboard_arrow_down_rounded, color: _muted),
+                        ]),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 10),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(children: <Widget>[
+                      for (final label in kDesignFilters)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: FilterChip(
+                            label: Text(label),
+                            selected: _filter == label && !_onlyFavorites && _collection == null,
+                            showCheckmark: false,
+                            labelStyle: AppText.body(13, color: _filter == label && !_onlyFavorites && _collection == null ? Colors.white : _body),
+                            backgroundColor: _chip,
+                            selectedColor: _accent,
+                            side: BorderSide.none,
+                            onSelected: (_) => setState(() { _filter = label; _collection = null; _onlyFavorites = false; }),
+                          ),
+                        ),
+                    ]),
+                  ),
+                  const SizedBox(height: 16),
+                  if (visible.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 48),
+                      child: Text('Ничего не найдено — попробуйте другой запрос или фильтр', textAlign: TextAlign.center, style: AppText.body(14, color: _muted)),
+                    )
+                  else
+                    LayoutBuilder(builder: (context, constraints) {
+                      final columns = constraints.maxWidth >= 580 ? 3 : 2;
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: visible.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 18,
+                          mainAxisExtent: (constraints.maxWidth - (columns - 1) * 12) / columns * 0.68 + 54,
+                        ),
+                        itemBuilder: (context, index) => _mobileWorkCard(visible[index], favorites),
+                      );
+                    }),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _mobileSearch() {
+    return TextField(
+      controller: _search,
+      onChanged: (value) => setState(() => _query = value),
+      style: AppText.body(15, color: _ink),
+      decoration: InputDecoration(
+        hintText: 'Поиск обоев, тем, тегов...',
+        hintStyle: AppText.body(14, color: _muted),
+        prefixIcon: const Icon(Icons.search_rounded, color: _muted),
+        filled: true,
+        fillColor: _card,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      ),
+    );
+  }
+
+  Widget _mobileHero() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
+        height: 300,
+        child: Stack(fit: StackFit.expand, children: <Widget>[
+          Image.asset('assets/design/hero-clean.jpg', fit: BoxFit.cover, alignment: Alignment.centerRight),
+          const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(
+            begin: Alignment.centerLeft, end: Alignment.centerRight,
+            colors: <Color>[Color(0xD9141B24), Color(0x75141B24), Color(0x16141B24)],
+          ))),
+          Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+              Text('Hikari · 光', style: AppText.body(13, color: _heroText)),
+              const SizedBox(height: 10),
+              Text('Красота\nв простых вещах', style: AppText.display(30, color: Colors.white, height: 1.12)),
+              const SizedBox(height: 10),
+              Text('Японские обои и темы для атмосферы гармонии', style: AppText.body(13, color: _heroText, height: 1.4)),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => _scrollTo(345),
+                style: FilledButton.styleFrom(backgroundColor: _accent, foregroundColor: Colors.white),
+                child: const Text('Открыть коллекции  →'),
+              ),
+            ]),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Widget _mobileWorkCard(DesignItem item, Set<String> favorites) {
+    final active = favorites.contains(item.catalogId);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+      Expanded(child: Stack(fit: StackFit.expand, children: <Widget>[
+        Semantics(
+          button: true,
+          label: 'Открыть ${item.title}',
+          child: InkWell(
+            onTap: () => _showMobileDetail(item.index),
+            child: ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.asset(item.image, fit: BoxFit.cover)),
+          ),
+        ),
+        Positioned(right: 4, top: 4, child: IconButton.filled(
+          tooltip: active ? 'Удалить из избранного' : 'Добавить в избранное',
+          onPressed: () => _toggleFavorite(item.catalogId, item.title),
+          style: IconButton.styleFrom(backgroundColor: active ? _accent : const Color(0x99000000), foregroundColor: Colors.white),
+          icon: Icon(active ? Icons.favorite_rounded : Icons.favorite_border_rounded, size: 20),
+        )),
+      ])),
+      const SizedBox(height: 7),
+      Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.body(14, color: _ink, weight: FontWeight.w600)),
+      const SizedBox(height: 3),
+      Text('3840 × 2160', style: AppText.body(11, color: _muted)),
+    ]);
+  }
+
+  void _showMobileDetail(int index) {
+    setState(() { _selectedIndex = index; _similarOffset = 0; });
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: _card,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(builder: (context, updateSheet) {
+        final item = kDesignItems[_selectedIndex];
+        final isFavorite = ref.read(favoritesProvider).contains(item.catalogId);
+        return FractionallySizedBox(
+          heightFactor: 0.9,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[
+              Stack(children: <Widget>[
+                ClipRRect(borderRadius: BorderRadius.circular(12), child: AspectRatio(
+                  aspectRatio: 1.45,
+                  child: Image.asset(item.detailImage ?? item.image, fit: BoxFit.cover),
+                )),
+                Positioned(right: 8, top: 8, child: IconButton.filled(
+                  tooltip: isFavorite ? 'Удалить из избранного' : 'Добавить в избранное',
+                  onPressed: () { _toggleFavorite(item.catalogId, item.title); updateSheet(() {}); },
+                  style: IconButton.styleFrom(backgroundColor: Colors.white, foregroundColor: _accent),
+                  icon: Icon(isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded),
+                )),
+              ]),
+              const SizedBox(height: 16),
+              Text(item.title, style: AppText.display(26, color: _ink)),
+              const SizedBox(height: 10),
+              Wrap(spacing: 6, runSpacing: 6, children: <Widget>[
+                for (final tag in item.detailTags)
+                  Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7), decoration: BoxDecoration(color: _chip, borderRadius: BorderRadius.circular(20)), child: Text(tag, style: AppText.body(12, color: _body))),
+              ]),
+              const SizedBox(height: 16),
+              Text(item.description, style: AppText.body(14, color: _body, height: 1.5)),
+              const SizedBox(height: 20),
+              Text('Палитра', style: AppText.display(19, color: _ink)),
+              const SizedBox(height: 8),
+              Wrap(spacing: 8, children: <Widget>[
+                for (final color in item.palette)
+                  IconButton(
+                    tooltip: 'Выбрать цвет акцента',
+                    onPressed: () { _setAccent(color); updateSheet(() {}); },
+                    icon: Container(width: 30, height: 30, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+                  ),
+              ]),
+              const SizedBox(height: 14),
+              Text('Доступные разрешения', style: AppText.display(19, color: _ink)),
+              const SizedBox(height: 8),
+              Wrap(spacing: 8, runSpacing: 8, children: <Widget>[
+                for (var i = 0; i < kDesignResolutions.length; i++)
+                  ChoiceChip(label: Text(kDesignResolutions[i]), selected: _resolution == i, onSelected: (_) { setState(() => _resolution = i); updateSheet(() {}); }),
+              ]),
+              const SizedBox(height: 18),
+              FilledButton.icon(
+                onPressed: () { _applyWallpaper(item); Navigator.of(sheetContext).pop(); },
+                style: FilledButton.styleFrom(backgroundColor: _accent, foregroundColor: Colors.white, minimumSize: const Size(0, 48)),
+                icon: const Icon(Icons.download_rounded), label: const Text('Применить обои'),
+              ),
+              const SizedBox(height: 24),
+              Text('Похожие обои', style: AppText.display(19, color: _ink)),
+              const SizedBox(height: 10),
+              SizedBox(height: 85, child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: item.similar.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final similar = kDesignItems[item.similar[index]];
+                  return Semantics(button: true, label: 'Открыть ${similar.title}', child: InkWell(
+                    onTap: () { setState(() => _selectedIndex = similar.index); updateSheet(() {}); },
+                    child: ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.asset(similar.image, width: 90, height: 85, fit: BoxFit.cover)),
+                  ));
+                },
+              )),
+            ]),
+          ),
+        );
+      }),
     );
   }
 
@@ -1296,6 +1607,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _scrollTo(double designY) {
+    if (_isMobileLayout) {
+      final target = designY >= 500 ? _catalogKey.currentContext : _overviewKey.currentContext;
+      if (target != null) {
+        Scrollable.ensureVisible(target, duration: const Duration(milliseconds: 420), curve: Curves.easeOutCubic);
+      }
+      return;
+    }
     if (!_scroll.hasClients) return;
     final target = (designY * _scale)
         .clamp(0.0, _scroll.position.maxScrollExtent)

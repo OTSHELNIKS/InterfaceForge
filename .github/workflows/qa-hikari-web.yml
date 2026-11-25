@@ -210,14 +210,22 @@ jobs:
 
             // Мобильная ширина: проверяем горизонтальный overflow и сохраняем кадр.
             await page.setViewportSize({ width: 390, height: 844 });
-            await page.waitForTimeout(800);
+            await page.reload({ waitUntil: 'networkidle' });
+            await page.waitForTimeout(1500);
             const mobile = await page.evaluate(() => ({
               scrollWidth: document.documentElement.scrollWidth,
               clientWidth: document.documentElement.clientWidth,
               scrollHeight: document.documentElement.scrollHeight,
               clientHeight: document.documentElement.clientHeight,
             }));
+            const mobileText = await collectText(page);
+            const mobileAria = await ariaSnapshot(page);
             const mobileShot = await page.screenshot({ clip: { x: 0, y: 0, width: 390, height: 844 }, type: 'png' });
+            await page.mouse.move(200, 700);
+            await page.mouse.wheel(0, 700);
+            await page.waitForTimeout(1000);
+            const mobileCatalogShot = await page.screenshot({ clip: { x: 0, y: 0, width: 390, height: 844 }, type: 'png' });
+            const mobileScrollDiffPct = await diffPct(mobileShot, mobileCatalogShot);
 
             const report = {
               dom,
@@ -226,7 +234,10 @@ jobs:
               desktopOverflowY: dom.scrollHeight - dom.clientHeight,
               mobileOverflowX: mobile.scrollWidth - mobile.clientWidth,
               mobileOverflowY: mobile.scrollHeight - mobile.clientHeight,
-              mobileScale: Number((390 / 1223).toFixed(3)),
+              mobileLayout: 'reflow',
+              mobileScrollDiffPct,
+              mobileAria: mobileAria.slice(0, 1200),
+              mobileTextSample: mobileText.filter((t) => t.length < 80).slice(0, 25),
               brightness: { mean: Number(mean.toFixed(1)), stdDev: Number(stdDev.toFixed(1)) },
               reference: { mae: Number(mae.toFixed(1)), changedPct: Number(changedPct.toFixed(1)) },
               interactionWorks,
@@ -253,6 +264,7 @@ jobs:
             await sharp(clickShot).resize(1200, 1261, { fit: 'fill' }).jpeg({ quality: 82 }).toFile('design/qa/screenshot-after-click.jpg');
             await sharp(searchShot).resize(1200, 1261, { fit: 'fill' }).jpeg({ quality: 82 }).toFile('design/qa/screenshot-after-search.jpg');
             await sharp(mobileShot).resize(390, 844, { fit: 'fill' }).jpeg({ quality: 82 }).toFile('design/qa/screenshot-mobile.jpg');
+            await sharp(mobileCatalogShot).jpeg({ quality: 82 }).toFile('design/qa/screenshot-mobile-catalog.jpg');
             console.log('QA_REPORT:' + JSON.stringify(report));
 
             await browser.close();
@@ -284,7 +296,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f design/qa/report.json design/qa/screenshot.jpg \
             design/qa/screenshot-after-click.jpg design/qa/screenshot-after-search.jpg \
-            design/qa/screenshot-mobile.jpg
+            design/qa/screenshot-mobile.jpg design/qa/screenshot-mobile-catalog.jpg
           git commit -m "QA: publish rendered screenshot and report" || echo "No QA changes to commit"
           git push origin HEAD:refs/heads/arena/45285b5c-interfaceforge
 
