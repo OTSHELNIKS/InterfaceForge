@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hikari/app/app.dart';
 import 'package:hikari/app/providers.dart';
 import 'package:hikari/data/models/catalog_data.dart';
+import 'package:hikari/features/website/website.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -29,6 +30,7 @@ void main() {
     testWidgets('home reflows at $width', (tester) async {
       await launch(tester, Size(width, 844));
       expect(find.text('Красота\nв простых вещах'), findsOneWidget);
+      expect(find.byType(SitePaperDecoration), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }
@@ -96,6 +98,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Коллекции').last);
     await tester.pumpAndSettle();
+    expect(find.byType(SitePaperDecoration), findsOneWidget);
     expect(find.text('Четыре настроения японской эстетики. Выберите подборку, чтобы увидеть её работы.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

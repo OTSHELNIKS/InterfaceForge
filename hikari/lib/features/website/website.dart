@@ -57,7 +57,18 @@ class _WebsiteShellState extends ConsumerState<WebsiteShell> {
   Widget _navigation({required bool collapsed, bool drawer = false}) {
     return Container(
       color: paper,
-      child: SafeArea(child: Column(children: <Widget>[
+      child: LayoutBuilder(builder: (context, constraints) => Stack(children: <Widget>[
+      if (!collapsed && constraints.maxHeight >= 760)
+        Positioned(
+          left: 0,
+          bottom: 78,
+          width: 185,
+          height: 260,
+          child: IgnorePointer(child: ExcludeSemantics(child: Image.asset(
+            'assets/design/decor-blossom.png', fit: BoxFit.contain, alignment: Alignment.centerLeft,
+          ))),
+        ),
+      SafeArea(child: Column(children: <Widget>[
         Padding(
           padding: EdgeInsets.fromLTRB(collapsed ? 8 : 20, 18, collapsed ? 8 : 10, 22),
           child: Row(children: <Widget>[
@@ -112,12 +123,9 @@ class _WebsiteShellState extends ConsumerState<WebsiteShell> {
         const Spacer(),
         if (!collapsed) Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-            Image.asset('assets/design/decor-blossom.png', height: 110, fit: BoxFit.cover),
-            const SizedBox(height: 12),
-            Text('ЯПОНСКАЯ ЭСТЕТИКА\nВ КАЖДОЙ ДЕТАЛИ', style: AppText.label(10, color: muted, height: 1.6)),
-          ]),
+          child: Text('ЯПОНСКАЯ ЭСТЕТИКА\nВ КАЖДОЙ ДЕТАЛИ', style: AppText.label(10, color: muted, height: 1.6)),
         ),
+      ])),
       ])),
     );
   }
@@ -152,10 +160,49 @@ class _WebsiteShellState extends ConsumerState<WebsiteShell> {
           decoration: const BoxDecoration(border: Border(right: BorderSide(color: line))),
           child: _collapsed ? null : _navigation(collapsed: false),
         ),
-        Expanded(child: widget.child),
+        Expanded(child: Stack(fit: StackFit.expand, children: <Widget>[
+          const SitePaperDecoration(),
+          widget.child,
+        ])),
       ]),
     );
   }
+}
+
+/// Орнамент является частью фона всех разделов и не перехватывает ввод.
+/// Исходная ветка и горы взяты из утверждённого макета без кадрирования.
+class SitePaperDecoration extends StatelessWidget {
+  const SitePaperDecoration({super.key});
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(builder: (context, constraints) {
+    final mobile = constraints.maxWidth < 600;
+    final branchWidth = mobile ? 190.0 : 270.0;
+    final mountainWidth = mobile ? 300.0 : 390.0;
+    return IgnorePointer(child: ExcludeSemantics(child: Stack(clipBehavior: Clip.hardEdge, children: <Widget>[
+      const Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(
+        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+          colors: <Color>[Color(0xFFF5F0E6), paper, Color(0xFFF6F1E8)]),
+      ))),
+      Positioned(
+        right: 0, top: mobile ? 8 : 24,
+        width: branchWidth, height: branchWidth * 260 / 185,
+        child: Opacity(
+          opacity: mobile ? 0.20 : 0.25,
+          child: Transform.flip(flipX: true, child: Image.asset(
+            'assets/design/decor-blossom.png', fit: BoxFit.contain,
+          )),
+        ),
+      ),
+      Positioned(
+        left: 0, bottom: 0,
+        width: mountainWidth, height: mountainWidth * 100 / 185,
+        child: Opacity(opacity: mobile ? 0.28 : 0.34, child: Image.asset(
+          'assets/design/decor-mountains.png', fit: BoxFit.contain,
+        )),
+      ),
+    ])));
+  });
 }
 
 class PageFrame extends StatelessWidget {
